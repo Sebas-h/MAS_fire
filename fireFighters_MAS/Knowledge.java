@@ -3,6 +3,10 @@ package fireFighters_MAS;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import globalcounter.FireKnowledgeUpdateCounter;
+import globalcounter.ForestKnowledgeUpdateCounter;
+import globalcounter.IGlobalCounter;
+import repast.simphony.context.Context;
 import repast.simphony.space.grid.GridPoint;
 /**
  * A class describing the firefighter's knowledge of the world
@@ -17,8 +21,10 @@ public class Knowledge
 	private LinkedHashMap<GridPoint, Boolean> firefighterKnowledge;	// A hash with locations, and corresponding flags of firefighter presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge;		// A hash with locations, and corresponding flags of rain presence in the knowledge
 	private Velocity windVelocity;	// A knowledge about the wind velocity
+	private Context<Object> context;
+	
 	/** Custom constructor */
-	public Knowledge()
+	public Knowledge(Context<Object> context)
 	{
 		// Initialize local variables
 		this.fireKnowledge = new LinkedHashMap<GridPoint, Boolean>();
@@ -26,7 +32,9 @@ public class Knowledge
 		this.firefighterKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.windVelocity = null;
+		this.context = context;
 	}
+
 	/**
 	 * Get positions of all the fire objects from the current knowledge
 	 * @return a set of positions of all the fire objects
@@ -112,6 +120,10 @@ public class Knowledge
 		}
 		
 		fireKnowledge.put(pos, true);
+		
+		// Increment successful knowledge update about fire:
+		((IGlobalCounter) context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
+		
 		return true;
 	}
 	/**
@@ -127,6 +139,10 @@ public class Knowledge
 		}
 		
 		forestKnowledge.put(pos, true);
+		
+		// Increment successful knowledge update about forest:
+		((IGlobalCounter) context.getObjects(ForestKnowledgeUpdateCounter.class).get(0)).incrementCounter();
+		
 		return true;
 	}
 	/**
@@ -254,8 +270,16 @@ public class Knowledge
 	 */
 	public void updateFromKnowledge(Knowledge k)
 	{
-		for (GridPoint pos : k.getAllFire()) { addFire(pos); }
-		for (GridPoint pos : k.getAllForest()) { addForest(pos); }
+		for (GridPoint pos : k.getAllFire()) { 
+			addFire(pos);
+			// Increment successful knowledge update about fire:
+			((IGlobalCounter) context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
+		}
+		for (GridPoint pos : k.getAllForest()) { 
+			addForest(pos);
+			// Increment successful knowledge update about forest:
+			((IGlobalCounter) context.getObjects(ForestKnowledgeUpdateCounter.class).get(0)).incrementCounter();
+		}
 		for (GridPoint pos : k.getAllFirefighters()) { addFirefighter(pos); }
 		for (GridPoint pos : k.getAllRain()) { addRain(pos); }
 	}

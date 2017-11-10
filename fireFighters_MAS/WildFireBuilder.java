@@ -1,5 +1,11 @@
 package fireFighters_MAS;
 
+
+import globalcounter.ExtinguishedFireCounter;
+import globalcounter.FireKnowledgeUpdateCounter;
+import globalcounter.ForestKnowledgeUpdateCounter;
+import globalcounter.MessageSentCounter;
+import globalcounter.WeatherCheckCounter;
 import repast.simphony.context.Context;
 import repast.simphony.context.space.grid.GridFactory;
 import repast.simphony.context.space.grid.GridFactoryFinder;
@@ -23,6 +29,7 @@ import repast.simphony.space.grid.SimpleGridAdder;
  */
 public class WildFireBuilder implements ContextBuilder<Object> {
 	ISchedulableAction addRainSchedule; // Action scheduled for the addRain method
+
 	Context<Object> context;
 	Grid<Object> grid;
 
@@ -50,10 +57,15 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 		int gridXsize = params.getInteger("gridWidth");
 		int gridYsize = params.getInteger("gridHeight");
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
+
+		Grid<Object> grid = gridFactory.createGrid("grid", context,
+				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, gridXsize, gridYsize));
+		
+		// Create firefighter instances, and add them to the context and to the grid in random locations
+
 		grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new BouncyBorders(),
 				new SimpleGridAdder<Object>(), true, gridXsize, gridYsize));
-		// Create firefighter instances, and add them to the context and to the grid in
-		// random locations
+
 		int firefighterCount = params.getInteger("firefighter_amount");
 
 		for (int i = 0; i < firefighterCount; i++) {
@@ -73,19 +85,27 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 				}
 			}
 		}
+		
 		// Add wind to the simulation
 		context.add(new Wind());
+		
 		// Schedule methods
-		ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
-		double rainProb = params.getDouble("rain_generation_speed");
-		ScheduleParameters sch_params = ScheduleParameters.createRepeating(1, 1 / rainProb);
-		addRainSchedule = schedule.schedule(sch_params, this, "addRain", context, grid);
-		// Set the simulation termination tick
-		int endTick = params.getInteger("end_tick");
-		RunEnvironment.getInstance().endAt(endTick);
 
-		FireExtinguishedCounter fec = new FireExtinguishedCounter();
-		context.add(fec);
+	    ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
+	    double rainProb = params.getDouble("rain_generation_speed");
+	    ScheduleParameters sch_params = ScheduleParameters.createRepeating(1, 1 / rainProb);
+	    addRainSchedule = schedule.schedule(sch_params, this, "addRain", context, grid);
+	    
+	    // Set the simulation termination tick
+	    int endTick = params.getInteger("end_tick");
+	    RunEnvironment.getInstance().endAt(endTick);
+    
+	    // Add global counters to context
+	    context.add(new ExtinguishedFireCounter());
+	    context.add(new WeatherCheckCounter());
+	    context.add(new FireKnowledgeUpdateCounter());
+	    context.add(new ForestKnowledgeUpdateCounter());
+	    context.add(new MessageSentCounter());
 
 		return context;
 	}
@@ -98,14 +118,9 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	 * @param grid
 	 *            - grid to add the rain to
 	 */
+
 	public void addRain(Context<Object> context, Grid<Object> grid) {
 		new Rain(context, grid, null);
-	}
-
-	public int getFireExtinguishedCounter() {
-		FireExtinguishedCounter fecounter = (FireExtinguishedCounter) context.getObjects(FireExtinguishedCounter.class)
-				.get(0);
-		return fecounter.getCounter();
 	}
 
 	public int getVisiblePercentage() {
