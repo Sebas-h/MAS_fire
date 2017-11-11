@@ -59,13 +59,10 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 		int gridYsize = params.getInteger("gridHeight");
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
 
-		Grid<Object> grid = gridFactory.createGrid("grid", context,
+		grid = gridFactory.createGrid("grid", context,
 				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, gridXsize, gridYsize));
 		
 		// Create firefighter instances, and add them to the context and to the grid in random locations
-
-		grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new BouncyBorders(),
-				new SimpleGridAdder<Object>(), true, gridXsize, gridYsize));
 
 		int firefighterCount = params.getInteger("firefighter_amount");
 
