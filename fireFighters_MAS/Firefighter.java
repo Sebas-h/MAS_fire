@@ -17,7 +17,6 @@ import repast.simphony.space.grid.GridPoint;
 import repast.simphony.util.collections.IndexedIterable;
 import globalcounter.*;
 
-
 // Enumerator listing the available message transmission methods
 enum TransmissionMethod {
 	Radio, // Send a message with the radio (local)
@@ -395,6 +394,8 @@ public class Firefighter {
 						recipient.recieveMessage(message); // Deliver message
 						bounty -= messageCost; // Pay for the message
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
+						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
+								.addMessage(message.getContent());
 					}
 				} else if (transmissionMethod == TransmissionMethod.Satellite) {
 					double globalMessageCost = messageCost * satelliteCostMultiplier; // A cost to send a message
@@ -404,6 +405,8 @@ public class Firefighter {
 						recipient.recieveMessage(message); // Deliver message
 						bounty -= globalMessageCost; // Pay for the message
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
+						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
+								.addMessage(message.getContent());
 					}
 				}
 			}
@@ -429,7 +432,7 @@ public class Firefighter {
 		if (context != null) {
 			// Increment weather check counter
 			((IGlobalCounter) context.getObjects(WeatherCheckCounter.class).get(0)).incrementCounter();
-			
+
 			if (context.getObjects(Wind.class).size() > 0) {
 				knowledge.setWindVelocity(((Wind) context.getObjects(Wind.class).get(0)).getWindDirection());
 			}

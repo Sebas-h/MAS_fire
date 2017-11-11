@@ -5,6 +5,7 @@ import globalcounter.ExtinguishedFireCounter;
 import globalcounter.FireKnowledgeUpdateCounter;
 import globalcounter.ForestKnowledgeUpdateCounter;
 import globalcounter.MessageSentCounter;
+import globalcounter.AvgMessageLength;
 import globalcounter.WeatherCheckCounter;
 import repast.simphony.context.Context;
 import repast.simphony.context.space.grid.GridFactory;
@@ -106,6 +107,7 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	    context.add(new FireKnowledgeUpdateCounter());
 	    context.add(new ForestKnowledgeUpdateCounter());
 	    context.add(new MessageSentCounter());
+	    context.add(new AvgMessageLength());
 
 		return context;
 	}
