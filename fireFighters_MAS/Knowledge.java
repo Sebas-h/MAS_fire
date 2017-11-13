@@ -245,7 +245,10 @@ public class Knowledge
 		String str = "";
 		
 		for (GridPoint pos : getAllFire()) { str += "Fire " + pos.getX() + " " + pos.getY() + ";"; }
-		
+		//for (GridPoint pos : getAllRain()) { str += "Rain " + pos.getX() + " " + pos.getY() + ";"; }
+		//for (GridPoint pos : getAllForest()) { str += "Forest " + pos.getX() + " " + pos.getY() + ";"; }
+		for (GridPoint pos : getAllFirefighters()) { str += "Firefighters " + pos.getX() + " " + pos.getY() + ";"; }
+
 		return str;
 	}
 	/**
@@ -262,6 +265,10 @@ public class Knowledge
 			String[] arr2 = arr1[i].split(" ");
 			
 			if (arr2[0].equals("Fire")) { addFire(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
+			//if (arr2[0].equals("Rain")) { addRain(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
+			//if (arr2[0].equals("Forest")) { addForest(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
+			if (arr2[0].equals("Firefighters")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
+		
 		}
 	}
 	/**

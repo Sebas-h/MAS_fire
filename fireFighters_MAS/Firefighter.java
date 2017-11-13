@@ -139,7 +139,6 @@ public class Firefighter {
 			GridPoint myPos = grid.getLocation(this);
 			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
 			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
-
 			if (firePos == sightPos) {
 				extinguishFire(directionToFire);
 			} // Extinguish the fire in the direction of heading
@@ -271,8 +270,9 @@ public class Firefighter {
 		GridPoint myPos = grid.getLocation(this);
 		GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
 		Fire fire = (Fire) Tools.getObjectOfTypeAt(grid, Fire.class, firePos);
-
+		
 		if (fire != null) {
+			
 			if (!fire.decreaseLifetime(strength)) // If the fire was extinguished
 			{
 				Parameters params = RunEnvironment.getInstance().getParameters();
@@ -347,7 +347,9 @@ public class Firefighter {
 	public void checkCell(GridPoint pos) {
 		boolean hasFirefighter = (Tools.getObjectOfTypeAt(grid, Firefighter.class, pos) != null);
 		boolean hasFire = (Tools.getObjectOfTypeAt(grid, Fire.class, pos) != null);
-
+		boolean hasRain = (Tools.getObjectOfTypeAt(grid, Rain.class, pos) != null);
+		boolean hasForest = (Tools.getObjectOfTypeAt(grid, Forest.class, pos) != null);
+		
 		if (hasFire) {
 			knowledge.addFire(pos);
 		} else {
@@ -359,7 +361,18 @@ public class Firefighter {
 		} else {
 			knowledge.removeFirefighter(pos);
 		}
-
+		
+		if (hasRain) {
+			knowledge.addRain(pos);
+		} else {
+			knowledge.removeRain(pos);
+		}
+		
+		if (hasForest) {
+			knowledge.addForest(pos);
+		} else {
+			knowledge.removeForest(pos);
+		}
 		newInfo = true;
 	}
 
