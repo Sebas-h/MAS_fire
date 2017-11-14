@@ -139,7 +139,7 @@ public class Firefighter {
 			GridPoint myPos = grid.getLocation(this);
 			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
 			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
-			if (firePos == sightPos) {
+			if (firePos.equals(sightPos)) {
 				extinguishFire(directionToFire);
 			} // Extinguish the fire in the direction of heading
 			else {
