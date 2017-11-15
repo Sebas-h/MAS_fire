@@ -104,8 +104,9 @@ public class Firefighter {
 			return;
 		}
 		// Action part (takes one step)
-		boolean checkWeather = RandomHelper.nextDouble() < 0.05; // TODO This decision should be made in a meaningful
-																	// way
+		boolean checkWeather = false;//RandomHelper.nextDouble() < 0.05; // TODO This decision should be made in a meaningful
+			//check for already updatetd, if neought bounty if fire in the sight
+																// way
 
 		if (checkWeather) {
 			checkWeather();
@@ -184,9 +185,11 @@ public class Firefighter {
 		} // Burn, and see if still moving
 
 		Velocity knownWindVelocity = knowledge.getWindVelocity();
+		//set a random movement direction for the cae no knowledge is available about the wind
 		double directionUpwind = RandomHelper.nextDoubleFromTo(0, 360);
 
 		if (knownWindVelocity != null) {
+			//run in the direction the fire is not going to
 			directionUpwind = knownWindVelocity.direction + 180;
 		}
 
@@ -393,6 +396,8 @@ public class Firefighter {
 		int messageCost = message.getCost();
 		int radioRange = params.getInteger("firefighter_radio_range");
 		int satelliteCostMultiplier = params.getInteger("firefighter_satellite_cost_multiplier");
+		//counts the general message sending actions
+		((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).incrementCounter();
 
 		for (GridPoint recipientLocation : recipientLocations) {
 			Firefighter recipient = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, recipientLocation);
@@ -407,6 +412,7 @@ public class Firefighter {
 						recipient.recieveMessage(message); // Deliver message
 						bounty -= messageCost; // Pay for the message
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
+						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
 								.addMessage(message.getContent());
 					}

@@ -1,10 +1,15 @@
 package fireFighters_MAS;
 
-
 import globalcounter.ExtinguishedFireCounter;
 import globalcounter.FireKnowledgeUpdateCounter;
 import globalcounter.ForestKnowledgeUpdateCounter;
+import globalcounter.IGlobalCounter;
 import globalcounter.MessageSentCounter;
+import globalcounter.MsgMethodCounter;
+import globalcounter.RadioMsgCounter;
+
+import com.jgoodies.binding.adapter.RadioButtonAdapter;
+
 import globalcounter.AvgMessageLength;
 import globalcounter.WeatherCheckCounter;
 import repast.simphony.context.Context;
@@ -59,10 +64,11 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 		int gridYsize = params.getInteger("gridHeight");
 		GridFactory gridFactory = GridFactoryFinder.createGridFactory(null);
 
-		grid = gridFactory.createGrid("grid", context,
-				new GridBuilderParameters<Object>(new BouncyBorders(), new SimpleGridAdder<Object>(), true, gridXsize, gridYsize));
-		
-		// Create firefighter instances, and add them to the context and to the grid in random locations
+		grid = gridFactory.createGrid("grid", context, new GridBuilderParameters<Object>(new BouncyBorders(),
+				new SimpleGridAdder<Object>(), true, gridXsize, gridYsize));
+
+		// Create firefighter instances, and add them to the context and to the grid in
+		// random locations
 
 		int firefighterCount = params.getInteger("firefighter_amount");
 
@@ -83,28 +89,30 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 				}
 			}
 		}
-		
+
 		// Add wind to the simulation
 		context.add(new Wind());
-		
+
 		// Schedule methods
 
-	    ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
-	    double rainProb = params.getDouble("rain_generation_speed");
-	    ScheduleParameters sch_params = ScheduleParameters.createRepeating(1, 1 / rainProb);
-	    addRainSchedule = schedule.schedule(sch_params, this, "addRain", context, grid);
-	    
-	    // Set the simulation termination tick
-	    int endTick = params.getInteger("end_tick");
-	    RunEnvironment.getInstance().endAt(endTick);
-    
-	    // Add global counters to context
-	    context.add(new ExtinguishedFireCounter());
-	    context.add(new WeatherCheckCounter());
-	    context.add(new FireKnowledgeUpdateCounter());
-	    context.add(new ForestKnowledgeUpdateCounter());
-	    context.add(new MessageSentCounter());
-	    context.add(new AvgMessageLength());
+		ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
+		double rainProb = params.getDouble("rain_generation_speed");
+		ScheduleParameters sch_params = ScheduleParameters.createRepeating(1, 1 / rainProb);
+		addRainSchedule = schedule.schedule(sch_params, this, "addRain", context, grid);
+
+		// Set the simulation termination tick
+		int endTick = params.getInteger("end_tick");
+		RunEnvironment.getInstance().endAt(endTick);
+
+		// Add global counters to context
+		context.add(new ExtinguishedFireCounter());
+		context.add(new WeatherCheckCounter());
+		context.add(new FireKnowledgeUpdateCounter());
+		context.add(new ForestKnowledgeUpdateCounter());
+		context.add(new MessageSentCounter());
+		context.add(new AvgMessageLength());
+		context.add(new RadioMsgCounter());
+		context.add(new MsgMethodCounter());
 
 		return context;
 	}
@@ -150,5 +158,24 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 			}
 		}
 		return (int) (((double) counterVisible / (gridXsize * gridYsize)) * 100);
+	}
+
+	/**
+	 * gets the percentag of succesfully sent messages via the radio method in view of totally sucessfully sent messages
+	 * @return
+	 */
+	public int getRadioSentPercentage() {
+		return (int) ((((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).getCounter()
+				/ (double) ((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()) * 100);
+	}
+	
+	/**
+	 * returns the average amount of the messages sucessfully sent per performing a broadcast/message sending.
+	 * @return
+	 */
+	public int avgContactsSentTo() {
+		return (int) ((((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()
+				/ (double) ((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).getCounter()) * 100);
+
 	}
 }
