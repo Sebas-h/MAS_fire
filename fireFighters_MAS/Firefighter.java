@@ -410,7 +410,7 @@ public class Firefighter {
 				{
 					if (getBounty() >= messageCost) {
 						recipient.recieveMessage(message); // Deliver message
-						bounty -= messageCost; // Pay for the message
+						//bounty -= messageCost; // Pay for the message
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
@@ -422,7 +422,7 @@ public class Firefighter {
 
 					if (getBounty() >= globalMessageCost) {
 						recipient.recieveMessage(message); // Deliver message
-						bounty -= globalMessageCost; // Pay for the message
+						//bounty -= globalMessageCost; // Pay for the message
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
 								.addMessage(message.getContent());
