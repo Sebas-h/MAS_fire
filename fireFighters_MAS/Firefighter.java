@@ -73,7 +73,7 @@ public class Firefighter {
 		double initialSpeedDeviation = params.getDouble("firefighter_initial_speed_deviation");
 		velocity = new Velocity(RandomHelper.nextDoubleFromTo(initialSpeed - initialSpeedDeviation,
 				initialSpeed + initialSpeedDeviation), RandomHelper.nextDoubleFromTo(0, 360));
-		knowledge = new Knowledge(this.context); // No knowledge yet
+		knowledge = new Knowledge(this.context); // No knowledge yet; this.context is only used for global counter!
 		newInfo = false; // No new info yet
 		// Schedule methods
 		ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
@@ -435,7 +435,7 @@ public class Firefighter {
 	 *            - a message
 	 */
 	public void recieveMessage(Message message) {
-		Knowledge receivedKnowledge = new Knowledge(this.context);
+		Knowledge receivedKnowledge = new Knowledge(this.context); // this.context is only used for the global counter!
 		receivedKnowledge.convertFromString(message.getContent());
 		knowledge.updateFromKnowledge(receivedKnowledge);
 	}
