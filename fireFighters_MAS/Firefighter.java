@@ -1,6 +1,9 @@
 package fireFighters_MAS;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 
 import globalcounter.IGlobalCounter;
 import repast.simphony.context.Context;
@@ -46,8 +49,10 @@ public class Firefighter {
 	ISchedulableAction stepSchedule; // Action scheduled for the step method
 	ISchedulableAction removeSchedule; // Action scheduled for the remove method
 	int id; // An ID of the firefighter
-	double character; // The character of the firefighter defining its behavior //TODO This should be
+	private ArrayList<GridPoint> sightedFirefighters;
+	Role role; // The character of the firefighter defining its behavior //TODO This should be
 						// implemented
+	Integer leader = null;
 
 	/**
 	 * Custom constructor
@@ -65,6 +70,7 @@ public class Firefighter {
 		this.context = context;
 		this.grid = grid;
 		this.id = id;
+		this.role = Role.Alone;
 		lifePoints = params.getInteger("firefighter_life");
 		strength = params.getInteger("firefighter_strength");
 		sightRange = params.getInteger("firefighter_sight_range");
@@ -73,7 +79,7 @@ public class Firefighter {
 		double initialSpeedDeviation = params.getDouble("firefighter_initial_speed_deviation");
 		velocity = new Velocity(RandomHelper.nextDoubleFromTo(initialSpeed - initialSpeedDeviation,
 				initialSpeed + initialSpeedDeviation), RandomHelper.nextDoubleFromTo(0, 360));
-		knowledge = new Knowledge(this.context); // No knowledge yet; this.context is only used for global counter!
+		knowledge = new Knowledge(this.context); // No knowledge yet
 		newInfo = false; // No new info yet
 		// Schedule methods
 		ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
@@ -96,17 +102,23 @@ public class Firefighter {
 
 		GridPoint myPos = grid.getLocation(this);
 		// Info acquisition part (takes no time)
-		checkAroundForFire(sightRange);
-
+		checkEnvironment(sightRange);
+		
 		if (checkSurroundedByFire()) // If caught by fire, die
 		{
 			decreaseLifePoints(lifePoints);
 			return;
 		}
-		// Action part (takes one step)
-		boolean checkWeather = RandomHelper.nextDouble() < 0.05; // TODO This decision should be made in a meaningful
-																	// way
-
+		
+		//Check if firefighter is leader, follower or alone
+		assignRole();
+		// Action part (takes one step)	
+		boolean checkWeather = false;
+		if (role == Role.Leader) {
+			//checkWeather = RandomHelper.nextDouble() < 0.05; 
+			checkWeather = true;
+		}
+		
 		if (checkWeather) {
 			checkWeather();
 		} else if (knowledge.getFire(myPos)) {
@@ -118,13 +130,24 @@ public class Firefighter {
 		// Communication part (takes no time)
 		if (newInfo) // If some new info of interest was obtained, send it around
 		{
-			int communicationDecision = 0; // TODO This decision should be made in a meaningful way
-
-			if (communicationDecision == 0) {
-				sendMessage(TransmissionMethod.Radio, knowledge.getAllFirefighters());
-			} else if (communicationDecision == 1) {
-				sendMessage(TransmissionMethod.Satellite, knowledge.getAllFirefighters());
+			//Handwaving to everyone in my sight			
+			handWave(TransmissionMethod.Radio,sightedFirefighters);
+			
+			if (role == Role.Follower) {
+				//send message with whole knowledge to leader
+				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))));
+						//new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
+			} else if (role == Role.Leader){
+				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
 			}
+			
+			//int communicationDecision = 0; // TODO This decision should be made in a meaningful way
+
+//			if (communicationDecision == 0) {
+//				sendMessage(TransmissionMethod.Radio, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
+//			} else if (communicationDecision == 1) {
+//				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
+//			}
 		}
 	}
 
@@ -139,6 +162,8 @@ public class Firefighter {
 			GridPoint myPos = grid.getLocation(this);
 			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
 			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
+			System.out.println("x:" + firePos.getX() + " y:" + firePos.getY());
+			System.out.println("x:" + sightPos.getX() + " y:" + sightPos.getY());
 			if (firePos.equals(sightPos)) {
 				extinguishFire(directionToFire);
 			} // Extinguish the fire in the direction of heading
@@ -224,9 +249,9 @@ public class Firefighter {
 	 * @param sightRange
 	 *            - number of cells from the given position to search in
 	 */
-	private void checkAroundForFire(int sightRange) {
+	private void checkEnvironment(int sightRange) {
 		GridPoint myPos = grid.getLocation(this);
-
+		sightedFirefighters = new ArrayList<>();
 		for (int i = -sightRange; i <= sightRange; i++) {
 			for (int j = -sightRange; j <= sightRange; j++) {
 				checkCell(new GridPoint(myPos.getX() + i, myPos.getY() + j));
@@ -259,7 +284,7 @@ public class Firefighter {
 
 		return true;
 	}
-
+	
 	/**
 	 * Extinguish fire in a given direction
 	 * 
@@ -297,7 +322,7 @@ public class Firefighter {
 			checkCell(newPos);
 
 			boolean hasFire = knowledge.getFire(newPos);
-			boolean hasFirefighter = knowledge.getFirefighter(newPos);
+			boolean hasFirefighter = hasFirefighter(newPos);
 
 			if (!hasFire && !hasFirefighter) // Make sure that the cell is not on fire, and is not occupied by another
 												// firefighter
@@ -310,6 +335,13 @@ public class Firefighter {
 		}
 
 		return -1;
+	}
+	
+	private boolean hasFirefighter(GridPoint pos) {
+		for (GridPoint p: sightedFirefighters) {
+			if (p.equals(pos)) return true;
+		}
+		return false;
 	}
 
 	/**
@@ -347,7 +379,6 @@ public class Firefighter {
 	public void checkCell(GridPoint pos) {
 		boolean hasFirefighter = (Tools.getObjectOfTypeAt(grid, Firefighter.class, pos) != null);
 		boolean hasFire = (Tools.getObjectOfTypeAt(grid, Fire.class, pos) != null);
-		boolean hasRain = (Tools.getObjectOfTypeAt(grid, Rain.class, pos) != null);
 		boolean hasForest = (Tools.getObjectOfTypeAt(grid, Forest.class, pos) != null);
 		
 		if (hasFire) {
@@ -357,15 +388,12 @@ public class Firefighter {
 		}
 
 		if (hasFirefighter) {
-			knowledge.addFirefighter(pos);
+			//only send the new firefighter your ID and location
+			//Don't add him into your knowledge -> He will put his stuff into your knowledge anyway
+			sightedFirefighters.add(pos);
+			//knowledge.addFirefighter(pos);
 		} else {
-			knowledge.removeFirefighter(pos);
-		}
-		
-		if (hasRain) {
-			knowledge.addRain(pos);
-		} else {
-			knowledge.removeRain(pos);
+			//knowledge.removeFirefighter(pos);
 		}
 		
 		if (hasForest) {
@@ -427,6 +455,39 @@ public class Firefighter {
 
 		newInfo = false; // All the new information was sent, over now
 	}
+	
+	public void handWave(TransmissionMethod transmissionMethod, ArrayList<GridPoint> recipientLocations) {
+		Parameters params = RunEnvironment.getInstance().getParameters();
+		GridPoint myPos = grid.getLocation(this);
+		Message message = new Message();
+		//add new content
+		String content = "HW "+ myPos.getX() + " " + myPos.getY() + " " + this.id +";";
+		message.setContent(content);
+		int messageCost = message.getCost();
+		int radioRange = params.getInteger("firefighter_radio_range");
+		
+		for (GridPoint recipientLocation : recipientLocations) {
+			Firefighter recipient = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, recipientLocation);
+
+			if (recipient != null) // First of all, if the recipient is there at all
+			{
+				if (transmissionMethod == TransmissionMethod.Radio
+						&& Tools.getDistance(myPos, recipientLocation) <= radioRange) // If using the radio, and the
+																						// recipient is within range
+				{
+					if (getBounty() >= messageCost) {
+						recipient.recieveMessage(message); // Deliver message
+						//bounty -= messageCost; // Pay for the message
+						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
+						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
+								.addMessage(message.getContent());
+					}
+				} 
+			}
+		}
+
+		newInfo = false; // All the new information was sent, over now
+	}
 
 	/**
 	 * Receive message
@@ -435,9 +496,28 @@ public class Firefighter {
 	 *            - a message
 	 */
 	public void recieveMessage(Message message) {
-		Knowledge receivedKnowledge = new Knowledge(this.context); // this.context is only used for the global counter!
+		Knowledge receivedKnowledge = new Knowledge(this.context);
 		receivedKnowledge.convertFromString(message.getContent());
 		knowledge.updateFromKnowledge(receivedKnowledge);
+	}
+	
+	/**Define the firefighter character */
+	private void assignRole() {
+		if (knowledge.getAllFirefighters().isEmpty()) role = Role.Alone;
+		else {
+			HashMap<Integer,GridPoint> friends = knowledge.getAllFirefighters();
+			int leaderID = getLowestID(friends.keySet());
+			if (leaderID==this.id) this.role = Role.Leader;
+			else {this.role = Role.Follower; leader = leaderID;}		
+		}
+	}
+	
+	private int getLowestID(Set<Integer> IDs) {
+		int min = this.id;
+		for (int ID : IDs) {
+			if (ID<min) min = ID;
+		}
+		return min;
 	}
 
 	/** Check current weather conditions */

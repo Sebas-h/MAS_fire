@@ -1,7 +1,9 @@
 package fireFighters_MAS;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import globalcounter.FireKnowledgeUpdateCounter;
 import globalcounter.ForestKnowledgeUpdateCounter;
@@ -18,8 +20,11 @@ public class Knowledge
 	// Local variables declaration
 	private LinkedHashMap<GridPoint, Boolean> fireKnowledge;		// A hash with locations, and corresponding flags of fire presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> forestKnowledge;		// A hash with locations, and corresponding flags of forest presence in the knowledge
-	private LinkedHashMap<GridPoint, Boolean> firefighterKnowledge;	// A hash with locations, and corresponding flags of firefighter presence in the knowledge
+	private LinkedHashMap<Integer, GridPoint> firefighterKnowledge;	// A hash with locations, and corresponding flags of firefighter presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge;		// A hash with locations, and corresponding flags of rain presence in the knowledge
+	private LinkedHashMap<GridPoint, Integer> IDKnowledge;		// A hash with locations, and corresponding flags of rain presence in the knowledge
+	
+	//private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's of my friends
 	private Velocity windVelocity;	// A knowledge about the wind velocity
 	private Context<Object> context;
 	
@@ -29,8 +34,10 @@ public class Knowledge
 		// Initialize local variables
 		this.fireKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.forestKnowledge = new LinkedHashMap<GridPoint, Boolean>();
-		this.firefighterKnowledge = new LinkedHashMap<GridPoint, Boolean>();
+		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
+		this.IDKnowledge = new LinkedHashMap<GridPoint, Integer>();
+		//this.firefighterID = new ArrayList<Integer>();
 		this.windVelocity = null;
 		this.context = context;
 	}
@@ -75,20 +82,25 @@ public class Knowledge
 	 * Get all the firefighter objects from the current knowledge
 	 * @return  a set of positions of all the firefighter objects
 	 */
-	public ArrayList<GridPoint> getAllFirefighters()
+	public HashMap<Integer,GridPoint> getAllFirefighters()
 	{
-		ArrayList<GridPoint> returnArray = new ArrayList<>();
+		HashMap<Integer,GridPoint> returnHashMap = new HashMap<Integer,GridPoint>();
 		
 		if (firefighterKnowledge != null)
 		{
-			for (GridPoint p : firefighterKnowledge.keySet())
+			for (Integer id : firefighterKnowledge.keySet())
 			{
-				if (firefighterKnowledge.get(p) != null) { returnArray.add(p); }
+				if (firefighterKnowledge.get(id) != null) { 
+					returnHashMap.put(id,firefighterKnowledge.get(id)); 
+				}
 			}
 		}
 		
-		return returnArray;
+		return returnHashMap;
 	}
+	
+	
+	
 	/**
 	 * Get all the rain objects from the current knowledge
 	 * @return  a set of positions of all the rain objects
@@ -150,16 +162,43 @@ public class Knowledge
 	 * @param pos - position at which the firefighter object should be added
 	 * @return 0 - if this firefighter is already known, 1 - if the firefighter was unknown and was added to the knowledge
 	 */
-	public boolean addFirefighter(GridPoint pos)
+	public boolean addFirefighter(GridPoint pos,Integer ID)
 	{
-		for (GridPoint p : firefighterKnowledge.keySet())
+		for (Integer id : firefighterKnowledge.keySet())
 		{
-			if (pos.equals(p)) { return false; }
+			//Update position in case he moved without noticing
+			if (id.equals(ID)) { firefighterKnowledge.put(ID, pos);return false; }
 		}
 		
-		firefighterKnowledge.put(pos, true);
+		firefighterKnowledge.put(ID, pos);
 		return true;
 	}
+	/**
+	 * Add the ID of a firefighter to the list of known IDs
+	 * @param id - id of the firefighter
+	 * @return 0 - if this firefighter is already known, 1 - if the firefighter was unknown and was added to the knowledge
+	 */
+//	public boolean addID(GridPoint pos, int id)
+//	{
+//	for (GridPoint p : IDKnowledge.keySet())
+//	{
+//		if (pos.equals(p)) { 
+//			if (IDKnowledge.get(p)==id) { return false;	}
+//			else if (IDKnowledge.containsValue(id)) {
+//				
+//			}
+//			return false; 
+//			}
+//		
+//	}
+//	
+//	firefighterKnowledge.put(pos, true);
+//	return true;
+//	
+//		//if (D.contains(id)) return false;
+//		//else firefighterID.add(id);
+//		//return true;
+//	}
 	/**
 	 * Add a rain object to a given position in a current knowledge
 	 * @param pos - position at which the rain object should be added
@@ -209,13 +248,13 @@ public class Knowledge
 	 * Remove firefighter at a given position from a current knowledge
 	 * @param pos - position from which the firefighter object should be removed
 	 */
-	public void removeFirefighter(GridPoint pos)
+	public void removeFirefighter(Integer ID)
 	{
-		for (GridPoint p : firefighterKnowledge.keySet())
+		for (Integer id : firefighterKnowledge.keySet())
 		{
-			if (pos.equals(p))
+			if (ID.equals(id))
 			{
-				firefighterKnowledge.put(p,null);
+				firefighterKnowledge.remove(id);
 				return;
 			}
 		}
@@ -247,8 +286,10 @@ public class Knowledge
 		for (GridPoint pos : getAllFire()) { str += "Fire " + pos.getX() + " " + pos.getY() + ";"; }
 		//for (GridPoint pos : getAllRain()) { str += "Rain " + pos.getX() + " " + pos.getY() + ";"; }
 		//for (GridPoint pos : getAllForest()) { str += "Forest " + pos.getX() + " " + pos.getY() + ";"; }
-		for (GridPoint pos : getAllFirefighters()) { str += "Firefighters " + pos.getX() + " " + pos.getY() + ";"; }
-
+		for (Map.Entry<Integer,GridPoint> entry : firefighterKnowledge.entrySet()) {
+			str += "Firefighters " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey()+";"; 
+		}
+		
 		return str;
 	}
 	/**
@@ -267,8 +308,11 @@ public class Knowledge
 			if (arr2[0].equals("Fire")) { addFire(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
 			//if (arr2[0].equals("Rain")) { addRain(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
 			//if (arr2[0].equals("Forest")) { addForest(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
-			if (arr2[0].equals("Firefighters")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
-		
+			if (arr2[0].equals("Firefighters")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2])),Integer.parseInt(arr2[3])); }
+			//if (arr2[0].equals("ID")) {addID(Integer.parseInt(arr2[1]));}
+			if (arr2[0].equals("HW")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2])),Integer.parseInt(arr2[3])); }
+			
+			
 		}
 	}
 	/**
@@ -287,7 +331,7 @@ public class Knowledge
 			// Increment successful knowledge update about forest:
 			((IGlobalCounter) context.getObjects(ForestKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
-		for (GridPoint pos : k.getAllFirefighters()) { addFirefighter(pos); }
+		for (Map.Entry<Integer,GridPoint> entry : getAllFirefighters().entrySet()) {addFirefighter(entry.getValue(),entry.getKey());}
 		for (GridPoint pos : k.getAllRain()) { addRain(pos); }
 	}
 	// Local getters
@@ -321,8 +365,12 @@ public class Knowledge
 	public boolean getFirefighter(GridPoint p)
 	{
 		if (firefighterKnowledge.get(p) == null) { return false; }
-		
-		return firefighterKnowledge.get(p);
+		return true;
+		//return firefighterKnowledge.get(p);
+	}
+	public GridPoint getFirefighter(Integer ID)
+	{
+		return firefighterKnowledge.get(ID);
 	}
 	/**
 	 * Get knowledge about a presence of rain in a given cell
