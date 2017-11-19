@@ -22,8 +22,7 @@ public class Knowledge
 	private LinkedHashMap<GridPoint, Boolean> forestKnowledge;		// A hash with locations, and corresponding flags of forest presence in the knowledge
 	private LinkedHashMap<Integer, GridPoint> firefighterKnowledge;	// A hash with locations, and corresponding flags of firefighter presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge;		// A hash with locations, and corresponding flags of rain presence in the knowledge
-	private LinkedHashMap<GridPoint, Integer> IDKnowledge;		// A hash with locations, and corresponding flags of rain presence in the knowledge
-	
+
 	//private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's of my friends
 	private Velocity windVelocity;	// A knowledge about the wind velocity
 	private Context<Object> context;
@@ -36,8 +35,6 @@ public class Knowledge
 		this.forestKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
-		this.IDKnowledge = new LinkedHashMap<GridPoint, Integer>();
-		//this.firefighterID = new ArrayList<Integer>();
 		this.windVelocity = null;
 		this.context = context;
 	}
@@ -169,7 +166,6 @@ public class Knowledge
 			//Update position in case he moved without noticing
 			if (id.equals(ID)) { firefighterKnowledge.put(ID, pos);return false; }
 		}
-		
 		firefighterKnowledge.put(ID, pos);
 		return true;
 	}
@@ -284,13 +280,35 @@ public class Knowledge
 		String str = "";
 		
 		for (GridPoint pos : getAllFire()) { str += "Fire " + pos.getX() + " " + pos.getY() + ";"; }
-		//for (GridPoint pos : getAllRain()) { str += "Rain " + pos.getX() + " " + pos.getY() + ";"; }
-		//for (GridPoint pos : getAllForest()) { str += "Forest " + pos.getX() + " " + pos.getY() + ";"; }
 		for (Map.Entry<Integer,GridPoint> entry : firefighterKnowledge.entrySet()) {
 			str += "Firefighters " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey()+";"; 
 		}
 		
 		return str;
+	}
+	/**
+	 * Encode the knowledge about my sight range cells to a string
+	 * @return the string representation of what I can see
+	 */
+	public String WhatIsee2String(GridPoint myPos, int sightRange)
+	{	
+		String str = "";
+		for (GridPoint pos : getAllFire()) { 
+			if(canBeSeen(myPos,pos,sightRange)) {str += "Fire " + pos.getX() + " " + pos.getY() + ";"; }
+		}
+		for (Map.Entry<Integer,GridPoint> entry : firefighterKnowledge.entrySet()) {
+			GridPoint pos = entry.getValue();
+			if(canBeSeen(myPos,pos,sightRange)) {str += "Firefighters " + pos.getX() + " " + pos.getY() + " " + entry.getKey()+";"; }
+		}
+		return str;
+	}
+	/**
+	 * Checks if the GridPoint pos can be seen from position myPos
+	 * @return true if GridPoint pos can be seen, false if not
+	 */
+	public boolean canBeSeen(GridPoint myPos, GridPoint pos, int sightRange) {
+		if (java.lang.Math.abs(pos.getX()-myPos.getX())<sightRange&&java.lang.Math.abs(pos.getY()-myPos.getY())<sightRange) return true;
+		return false;
 	}
 	/**
 	 * Decode knowledge from the string message
@@ -310,9 +328,8 @@ public class Knowledge
 			//if (arr2[0].equals("Forest")) { addForest(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
 			if (arr2[0].equals("Firefighters")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2])),Integer.parseInt(arr2[3])); }
 			//if (arr2[0].equals("ID")) {addID(Integer.parseInt(arr2[1]));}
-			if (arr2[0].equals("HW")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2])),Integer.parseInt(arr2[3])); }
-			
-			
+			if (arr2[0].equals("HW")) { addFirefighter(new GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2])),Integer.parseInt(arr2[3])); }	
+			if (arr2[0].equals("Dead Firefighter")) {removeFirefighter(Integer.parseInt(arr2[1])); }
 		}
 	}
 	/**
@@ -331,7 +348,9 @@ public class Knowledge
 			// Increment successful knowledge update about forest:
 			((IGlobalCounter) context.getObjects(ForestKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
-		for (Map.Entry<Integer,GridPoint> entry : getAllFirefighters().entrySet()) {addFirefighter(entry.getValue(),entry.getKey());}
+		for (Map.Entry<Integer,GridPoint> entry : k.getAllFirefighters().entrySet()) {
+			addFirefighter(entry.getValue(),entry.getKey());
+			}
 		for (GridPoint pos : k.getAllRain()) { addRain(pos); }
 	}
 	// Local getters
@@ -362,11 +381,11 @@ public class Knowledge
 	 * @param p - a cell to check
 	 * @return 1 if the object exists in the knowledge, 0 - if not
 	 */
-	public boolean getFirefighter(GridPoint p)
+	public boolean getFirefighter(int id)
 	{
-		if (firefighterKnowledge.get(p) == null) { return false; }
+		if (firefighterKnowledge.get(id) == null) { return false; }
 		return true;
-		//return firefighterKnowledge.get(p);
+		//return firefighterKnowledge.values(id);
 	}
 	public GridPoint getFirefighter(Integer ID)
 	{

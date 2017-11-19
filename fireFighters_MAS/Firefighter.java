@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
-
 import globalcounter.IGlobalCounter;
 import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
@@ -52,7 +51,8 @@ public class Firefighter {
 	private ArrayList<GridPoint> sightedFirefighters;
 	Role role; // The character of the firefighter defining its behavior //TODO This should be
 						// implemented
-	Integer leader = null;
+	Integer leader = -1;
+	Integer oldleader = -1; 
 
 	/**
 	 * Custom constructor
@@ -99,23 +99,44 @@ public class Firefighter {
 		if (!context.contains(this)) {
 			return;
 		} // Safety
-
+		if (id ==16) {
+			id = 16;
+		}
 		GridPoint myPos = grid.getLocation(this);
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
 		
 		if (checkSurroundedByFire()) // If caught by fire, die
 		{
+			//Tell people that I am dead
+			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()),MessageType.BYE);
 			decreaseLifePoints(lifePoints);
 			return;
 		}
 		
+		//Safe the old leader to know if leader changed
+		oldleader = leader;
 		//Check if firefighter is leader, follower or alone
 		assignRole();
+		System.out.println(" ");
+		System.out.print("Firefighter "+id);
+		System.out.print(" is "+role+", ");
+		if (role == Role.Leader) {
+			System.out.print("followers are ");
+			HashMap<Integer,GridPoint> friends = knowledge.getAllFirefighters();
+			for (int friendId:friends.keySet()) {
+				System.out.print(friendId+", ");
+			}
+			
+		}
+		if (role == Role.Follower) {
+			System.out.print("leader is "+leader);
+		}
+		
 		// Action part (takes one step)	
 		boolean checkWeather = false;
 		if (role == Role.Leader) {
-			//checkWeather = RandomHelper.nextDouble() < 0.05; 
+			//checkWeather = RandomHelper.nextDouble() < 0.5; 
 			checkWeather = true;
 		}
 		
@@ -125,20 +146,30 @@ public class Firefighter {
 			runOutOfFire();
 		} // If firefighter knows that he is standing in the fire
 		else {
+			if (role==Role.Leader) runAwayFromFire();
 			moveOrExtinguish();
 		}
 		// Communication part (takes no time)
 		if (newInfo) // If some new info of interest was obtained, send it around
 		{
-			//Handwaving to everyone in my sight			
-			handWave(TransmissionMethod.Radio,sightedFirefighters);
+			//Handwaving to everyone in my sight	
+			sendMessage(TransmissionMethod.Radio,sightedFirefighters,MessageType.ME);
+			//handWave(TransmissionMethod.Radio,sightedFirefighters);
 			
 			if (role == Role.Follower) {
-				//send message with whole knowledge to leader
-				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))));
-						//new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
+				//Update old leader that there is a new leader by sending whole knowledge
+				//TODO: Send only important informations (Location of new leader)
+				if (oldleader!=leader&&oldleader!=-1) sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(oldleader))),MessageType.ALL);
+				//Send whole knowledge if first encounter with leader
+				if (oldleader!=leader&&oldleader==-1) sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ALL);
+				
+				//If leader stays the same, send him update about only my environment
+				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ISEE);
 			} else if (role == Role.Leader){
-				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
+				HashMap<Integer,GridPoint> followers = knowledge.getAllFirefighters();
+				//Don't send message to myself
+				followers.remove(id);
+				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(followers.values()),MessageType.ALL);
 			}
 			
 			//int communicationDecision = 0; // TODO This decision should be made in a meaningful way
@@ -162,8 +193,8 @@ public class Firefighter {
 			GridPoint myPos = grid.getLocation(this);
 			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
 			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
-			System.out.println("x:" + firePos.getX() + " y:" + firePos.getY());
-			System.out.println("x:" + sightPos.getX() + " y:" + sightPos.getY());
+			//System.out.println("x:" + firePos.getX() + " y:" + firePos.getY());
+			//System.out.println("x:" + sightPos.getX() + " y:" + sightPos.getY());
 			if (firePos.equals(sightPos)) {
 				extinguishFire(directionToFire);
 			} // Extinguish the fire in the direction of heading
@@ -179,7 +210,11 @@ public class Firefighter {
 			tryToMove(velocity.direction);
 		}
 	}
-
+	public void runAwayFromFire() {
+		double result[] = findDirection2NearestFire();
+		double direction = result[0];
+		tryToMove(direction+180);
+	}
 	/**
 	 * Given a possible movement direction, generate a set of others, and try to
 	 * move in one of them
@@ -204,6 +239,7 @@ public class Firefighter {
 
 	/** Firefighter's reaction on being in the fire */
 	private void runOutOfFire() {
+		if (lifePoints<=1) sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()),MessageType.BYE);
 		if (!decreaseLifePoints(1)) {
 			return;
 		} // Burn, and see if still moving
@@ -254,7 +290,7 @@ public class Firefighter {
 		sightedFirefighters = new ArrayList<>();
 		for (int i = -sightRange; i <= sightRange; i++) {
 			for (int j = -sightRange; j <= sightRange; j++) {
-				checkCell(new GridPoint(myPos.getX() + i, myPos.getY() + j));
+				if (i!=0&&j!=0) checkCell(new GridPoint(myPos.getX() + i, myPos.getY() + j));
 			}
 		}
 	}
@@ -413,11 +449,21 @@ public class Firefighter {
 	 * @param recipientLocations
 	 *            - a list of locations of firefighters to send the message to
 	 */
-	public void sendMessage(TransmissionMethod transmissionMethod, ArrayList<GridPoint> recipientLocations) {
+	public void sendMessage(TransmissionMethod transmissionMethod, ArrayList<GridPoint> recipientLocations,MessageType messageType) {
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		GridPoint myPos = grid.getLocation(this);
 		Message message = new Message();
-		message.setContent(this.knowledge.convert2String());
+		//Get leader informations
+		GridPoint leaderLocation = knowledge.getAllFirefighters().get(leader);
+		if (messageType == MessageType.ALL)	message.setContent(this.knowledge.convert2String());
+		else if (messageType == MessageType.ISEE) message.setContent(this.knowledge.WhatIsee2String(myPos, sightRange));
+		else if (messageType == MessageType.ME) {
+			//Send people I see my information and my leaders information. This way, their leader can become my leader
+			if (leader==-1) message.setContent("HW "+ myPos.getX() + " " + myPos.getY() + " " + this.id +";");
+			else message.setContent("HW "+ myPos.getX() + " " + myPos.getY() + " " + this.id +";" +"HW "+ leaderLocation.getX() + " " + leaderLocation.getY() + " " + this.leader+";");
+		} else if (messageType == MessageType.BYE) {
+			message.setContent("Dead Firefighter "+id);
+		}
 		int messageCost = message.getCost();
 		int radioRange = params.getInteger("firefighter_radio_range");
 		int satelliteCostMultiplier = params.getInteger("firefighter_satellite_cost_multiplier");
@@ -444,6 +490,7 @@ public class Firefighter {
 
 					if (getBounty() >= globalMessageCost) {
 						recipient.recieveMessage(message); // Deliver message
+						
 						//bounty -= globalMessageCost; // Pay for the message
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
@@ -456,39 +503,7 @@ public class Firefighter {
 		newInfo = false; // All the new information was sent, over now
 	}
 	
-	public void handWave(TransmissionMethod transmissionMethod, ArrayList<GridPoint> recipientLocations) {
-		Parameters params = RunEnvironment.getInstance().getParameters();
-		GridPoint myPos = grid.getLocation(this);
-		Message message = new Message();
-		//add new content
-		String content = "HW "+ myPos.getX() + " " + myPos.getY() + " " + this.id +";";
-		message.setContent(content);
-		int messageCost = message.getCost();
-		int radioRange = params.getInteger("firefighter_radio_range");
-		
-		for (GridPoint recipientLocation : recipientLocations) {
-			Firefighter recipient = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, recipientLocation);
-
-			if (recipient != null) // First of all, if the recipient is there at all
-			{
-				if (transmissionMethod == TransmissionMethod.Radio
-						&& Tools.getDistance(myPos, recipientLocation) <= radioRange) // If using the radio, and the
-																						// recipient is within range
-				{
-					if (getBounty() >= messageCost) {
-						recipient.recieveMessage(message); // Deliver message
-						//bounty -= messageCost; // Pay for the message
-						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
-						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
-								.addMessage(message.getContent());
-					}
-				} 
-			}
-		}
-
-		newInfo = false; // All the new information was sent, over now
-	}
-
+	
 	/**
 	 * Receive message
 	 * 
@@ -503,11 +518,18 @@ public class Firefighter {
 	
 	/**Define the firefighter character */
 	private void assignRole() {
+		//If he doesn't know any one -> Role Alone
 		if (knowledge.getAllFirefighters().isEmpty()) role = Role.Alone;
 		else {
 			HashMap<Integer,GridPoint> friends = knowledge.getAllFirefighters();
 			int leaderID = getLowestID(friends.keySet());
-			if (leaderID==this.id) this.role = Role.Leader;
+			if (leaderID==this.id) {
+				//If the only one he knows is himself -> Role Alone
+				if (friends.keySet().size()==1) this.role = Role.Alone;
+				//If he knows at least one other firefighter and has the lowest ID -> Role Leader
+				else this.role = Role.Leader;
+			}
+			//If he has a firefighter in his knowledge with a lower ID -> Role.Follower
 			else {this.role = Role.Follower; leader = leaderID;}		
 		}
 	}
