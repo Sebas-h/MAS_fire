@@ -127,10 +127,18 @@ public class Firefighter {
 			for (int friendId:friends.keySet()) {
 				System.out.print(friendId+", ");
 			}
+			System.out.print("Connection failed to: ");
+			for (int friendID:friends.keySet()) {
+				Firefighter friend = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, friends.get(friendID));
+				if (friend==null) System.out.print(friendID+" ");
+			}
 			
 		}
 		if (role == Role.Follower) {
 			System.out.print("leader is "+leader);
+			Firefighter myleader = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class,knowledge.getAllFirefighters().get(leader));
+			if (myleader==null) System.out.print(" - Follower has no connection!");
+
 		}
 		
 		// Action part (takes one step)	
@@ -140,45 +148,47 @@ public class Firefighter {
 			checkWeather = true;
 		}
 		
-		if (checkWeather) {
+		if (knowledge.getFire(myPos)) {
+			runOutOfFire(); // If firefighter knows that he is standing in the fire
+		} else if (checkWeather) {
 			checkWeather();
-		} else if (knowledge.getFire(myPos)) {
-			runOutOfFire();
-		} // If firefighter knows that he is standing in the fire
+		} 
 		else {
 			if (role==Role.Leader) runAwayFromFire();
 			moveOrExtinguish();
 		}
 		// Communication part (takes no time)
-		if (newInfo) // If some new info of interest was obtained, send it around
-		{
-			//Handwaving to everyone in my sight	
-			sendMessage(TransmissionMethod.Radio,sightedFirefighters,MessageType.ME);
-			//handWave(TransmissionMethod.Radio,sightedFirefighters);
+		//Handwaving to everyone in my sight	
+		sendMessage(TransmissionMethod.Radio,sightedFirefighters,MessageType.ME);
+		
+		if (role == Role.Follower) {
+			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ME);
 			
-			if (role == Role.Follower) {
-				//Update old leader that there is a new leader by sending whole knowledge
-				//TODO: Send only important informations (Location of new leader)
-				if (oldleader!=leader&&oldleader!=-1) sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(oldleader))),MessageType.ALL);
-				//Send whole knowledge if first encounter with leader
-				if (oldleader!=leader&&oldleader==-1) sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ALL);
-				
+			if (oldleader!=leader) {
+				if (oldleader!=-1) {
+					//Update old leader that there is a new leader by sending whole knowledge
+					//TODO: Send only important informations (Location of new leader)
+					sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(oldleader))),MessageType.ME);
+					//Send new leader whole knowledge
+					sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ALL);
+					sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ME);
+				} else {
+					//Send whole knowledge if first encounter with leader
+					sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ALL);
+					sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ME);
+				}
+				sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()),MessageType.ME);
+			} else if (leader!=-1&&leader==oldleader) {
 				//If leader stays the same, send him update about only my environment
-				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ISEE);
-			} else if (role == Role.Leader){
-				HashMap<Integer,GridPoint> followers = knowledge.getAllFirefighters();
-				//Don't send message to myself
-				followers.remove(id);
-				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(followers.values()),MessageType.ALL);
-			}
-			
-			//int communicationDecision = 0; // TODO This decision should be made in a meaningful way
-
-//			if (communicationDecision == 0) {
-//				sendMessage(TransmissionMethod.Radio, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
-//			} else if (communicationDecision == 1) {
-//				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()));
-//			}
+				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ISEE);	
+				sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),MessageType.ME);	
+			}	
+		} else if (role == Role.Leader){
+			HashMap<Integer,GridPoint> followers = knowledge.getAllFirefighters();
+			//Don't send message to myself
+			followers.remove(id);
+			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(followers.values()),MessageType.ME);
+			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(followers.values()),MessageType.ALL);
 		}
 	}
 

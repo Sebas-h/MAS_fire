@@ -60,6 +60,7 @@ public class Fire
 	@ScheduledMethod(shuffle=false) // Prevent call order shuffling
 	public void step()
 	{
+		
 	    if (!Tools.isAtTick(stepSchedule.getNextTime())) { return; } // Execute only at the specified ticks
 	    
 		if (!context.contains(this)) { return; } // Safety

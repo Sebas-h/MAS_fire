@@ -281,7 +281,7 @@ public class Knowledge
 		
 		for (GridPoint pos : getAllFire()) { str += "Fire " + pos.getX() + " " + pos.getY() + ";"; }
 		for (Map.Entry<Integer,GridPoint> entry : firefighterKnowledge.entrySet()) {
-			str += "Firefighters " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey()+";"; 
+			//str += "Firefighters " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey()+";"; 
 		}
 		
 		return str;
