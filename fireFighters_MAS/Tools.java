@@ -116,6 +116,9 @@ public class Tools
 	public final static int getDistance(GridPoint p1, GridPoint p2)
 	{
 		if (p1.equals(p2)) { return 0; }
+		if(p1==null || p2==null) {
+			return Integer.MAX_VALUE;
+		}
 		// Absolute linear distances
 		int fXDistance = Math.abs(p2.getX() - p1.getX()), fYDistance = Math.abs(p2.getY() - p1.getY());
 		//
