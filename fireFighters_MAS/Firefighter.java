@@ -624,6 +624,16 @@ public class Firefighter {
 		receivedKnowledge.convertFromString(message.getContent());
 		knowledge.updateFromKnowledge(receivedKnowledge);
 	}
+	
+	/**
+	 * This methods returns the Gridpoint which should be reached next by the Firefighter
+	 * (The next task)
+	 * @param f current firefighter
+	 * @return next Task
+	 */
+	private GridPoint evaluae(Firefighter f) {
+		return new GridPoint(null);
+	}
 
 	/** Define the firefighter character */
 	private void assignRole() {
