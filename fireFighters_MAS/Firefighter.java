@@ -633,8 +633,23 @@ public class Firefighter {
 	 * @param f current firefighter
 	 * @return next Task
 	 */
-	private GridPoint evaluate(Firefighter f) {
-		return new GridPoint(null);
+	private GridPoint evaluate(int id) {
+		GridPoint Pos = knowledge.getFirefighter(id);
+		// GridPoint myPos = grid.getLocation(this); grid.getLocation (Firefighter f)
+		int minDist = Integer.MAX_VALUE;
+		GridPoint temp = new GridPoint(null);
+		for (GridPoint p : knowledge.getAllFire()) // For all the fires in the firefighter's knowledge
+		{
+			int dist = Tools.getDistance(Pos, p);
+			// Determine if the fire is closest. If so, update distance and direction
+			// accordingly
+			if (dist < minDist) {
+				temp = p;
+				minDist = dist;
+			}
+		}	
+		
+		return temp;
 	}
 
 	/** Define the firefighter character */
