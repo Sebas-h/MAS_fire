@@ -631,7 +631,7 @@ public class Firefighter {
 	 * @param f current firefighter
 	 * @return next Task
 	 */
-	private GridPoint evaluae(Firefighter f) {
+	private GridPoint evaluate(Firefighter f) {
 		return new GridPoint(null);
 	}
 
