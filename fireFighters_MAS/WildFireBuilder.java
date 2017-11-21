@@ -165,7 +165,7 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	 * @return
 	 */
 	public int getRadioSentPercentage() {
-		return (int) ((((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).getCounter()
+		return (int)Math.round((((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).getCounter()
 				/ (double) ((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()) * 100);
 	}
 	
@@ -174,8 +174,8 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	 * @return
 	 */
 	public int avgContactsSentTo() {
-		return (int) ((((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()
-				/ (double) ((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).getCounter()) * 100);
+		return (int)Math.round((((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()
+				/ (double) ((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).getCounter()));
 
 	}
 }
