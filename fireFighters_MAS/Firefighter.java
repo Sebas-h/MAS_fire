@@ -109,6 +109,8 @@ public class Firefighter {
 		GridPoint myPos = grid.getLocation(this);
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
+		// increases a score for each known fire by 1 
+		knowledge.increaseFireScore();
 
 		if (checkSurroundedByFire()) // If caught by fire, die
 		{
@@ -161,7 +163,7 @@ public class Firefighter {
 			checkWeather = true;
 		}
 
-		if (knowledge.getFire(myPos)) {
+		if (knowledge.getFire(myPos)>0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
 			leaderMoved = true;
 		} else if (checkWeather) {
@@ -401,7 +403,7 @@ public class Firefighter {
 				{
 					GridPoint pos = new GridPoint(myPos.getX() + i, myPos.getY() + j);
 
-					if (!knowledge.getFire(pos)) {
+					if (knowledge.getFire(pos)==0) {
 						return false;
 					}
 				}
@@ -447,7 +449,7 @@ public class Firefighter {
 		if (Tools.isWithinBorders(newPos, grid)) {
 			checkCell(newPos);
 
-			boolean hasFire = knowledge.getFire(newPos);
+			boolean hasFire = knowledge.getFire(newPos)>0;
 			boolean hasFirefighter = hasFirefighter(newPos);
 
 			if (!hasFire && !hasFirefighter) // Make sure that the cell is not on fire, and is not occupied by another
