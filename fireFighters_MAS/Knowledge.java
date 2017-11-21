@@ -19,7 +19,7 @@ import repast.simphony.space.grid.GridPoint;
  */
 public class Knowledge {
 	// Local variables declaration
-	private LinkedHashMap<GridPoint, Boolean> fireKnowledge; // A hash with locations, and corresponding flags of fire
+	private LinkedHashMap<GridPoint, Integer> fireKnowledge; // A hash with locations, and corresponding flags of fire
 																// presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> forestKnowledge; // A hash with locations, and corresponding flags of
 																// forest presence in the knowledge
@@ -38,7 +38,7 @@ public class Knowledge {
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
 		// Initialize local variables
-		this.fireKnowledge = new LinkedHashMap<GridPoint, Boolean>();
+		this.fireKnowledge = new LinkedHashMap<GridPoint, Integer>();
 		this.forestKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
@@ -73,7 +73,7 @@ public class Knowledge {
 
 		if (fireKnowledge != null) {
 			for (GridPoint p : fireKnowledge.keySet()) {
-				if (fireKnowledge.get(p) != null) {
+				if (fireKnowledge.get(p) != null ||fireKnowledge.get(p) != 0) {
 					returnArray.add(p);
 				}
 			}
@@ -138,6 +138,11 @@ public class Knowledge {
 
 		return returnArray;
 	}
+	
+	//overloading this method may not be neccesarry
+	public boolean addFire(GridPoint pos) {
+	 return addFire(pos,0);
+	}
 
 	/**
 	 * Add a position of a fire to the current knowledge
@@ -147,14 +152,15 @@ public class Knowledge {
 	 * @return 0 - if this fire is already known, 1 - if the fire was unknown and
 	 *         was added to the knowledge
 	 */
-	public boolean addFire(GridPoint pos) {
+	public boolean addFire(GridPoint pos, int dur) {
 		for (GridPoint p : fireKnowledge.keySet()) {
+			//allready knows fire
 			if (pos.equals(p)) {
 				return false;
 			}
 		}
 
-		fireKnowledge.put(pos, true);
+		fireKnowledge.put(pos, 1);
 
 		// Increment successful knowledge update about fire:
 		((IGlobalCounter) context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
@@ -262,7 +268,7 @@ public class Knowledge {
 	public void removeFire(GridPoint pos) {
 		for (GridPoint p : fireKnowledge.keySet()) {
 			if (pos.equals(p)) {
-				fireKnowledge.put(p, null);
+				fireKnowledge.put(p, 0);
 				return;
 			}
 		}
@@ -294,6 +300,14 @@ public class Knowledge {
 			if (ID.equals(id)) {
 				firefighterKnowledge.remove(id);
 				return;
+			}
+		}
+	}
+	
+	public void increaseFireScore() {
+		for (GridPoint p : fireKnowledge.keySet()) {
+			if(fireKnowledge.get(p)!=0) {
+				fireKnowledge.replace(p, fireKnowledge.get(p)+1);
 			}
 		}
 	}
@@ -386,6 +400,7 @@ public class Knowledge {
 				radioDistance= Integer.parseInt(arr2[1]);
 			}
 			if (arr2[0].equals("Fire")) {
+				//TODO maybe add the current duration the fire is allready known
 				addFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 			}
 			// if (arr2[0].equals("Rain")) { addRain(new
@@ -415,9 +430,9 @@ public class Knowledge {
 	 */
 	public void updateFromKnowledge(Knowledge k) {
 		for (GridPoint pos : k.getAllFire()) {
-			addFire(pos);
+			addFire(pos, k.getFire(pos));
 			// Increment successful knowledge update about fire:
-			((IGlobalCounter) context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
+			//((IGlobalCounter) context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
 		for (GridPoint pos : k.getAllForest()) {
 			addForest(pos);
@@ -435,15 +450,16 @@ public class Knowledge {
 
 	// Local getters
 	/**
-	 * Get knowledge about a presence of fire in a given cell
+	 * gets the duration the fire is already known
+	 * ==0 if no fire 
 	 * 
 	 * @param p
 	 *            - a cell to check
 	 * @return 1 if the object exists in the knowledge, 0 - if not
 	 */
-	public boolean getFire(GridPoint p) {
+	public int getFire(GridPoint p) {
 		if (fireKnowledge.get(p) == null) {
-			return false;
+			return 0;
 		}
 
 		return fireKnowledge.get(p);
