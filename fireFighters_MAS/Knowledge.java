@@ -487,16 +487,16 @@ public class Knowledge {
 	 *            - a cell to check
 	 * @return 1 if the object exists in the knowledge, 0 - if not
 	 */
-	public boolean getFirefighter(int id) {
+	/*public boolean getFirefighter(int id) {
 		if (firefighterKnowledge.get(id) == null) {
 			return false;
 		}
 		return true;
 		// return firefighterKnowledge.values(id);
-	}
+	}*/
 
-	public GridPoint getFirefighter(Integer ID) {
-		return firefighterKnowledge.get(ID);
+	public GridPoint getFirefighter(int id) {
+		return firefighterKnowledge.get(id);
 	}
 
 	/**
