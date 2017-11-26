@@ -34,6 +34,7 @@ public class Knowledge {
 	private GridPoint radioDistPosition;
 	private int radioDistance;
 	private Context<Object> context;
+	private GridPoint currentTask;
 
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
@@ -326,6 +327,12 @@ public class Knowledge {
 			}
 		}
 	}
+	
+	public void removeAllRain() {
+		for (GridPoint p : rainKnowledge.keySet()) {
+			removeRain(p);
+		}
+	}
 
 	/**
 	 * Encode the knowledge to a string
@@ -418,6 +425,13 @@ public class Knowledge {
 			}
 			if (arr2[0].equals("Dead Firefighter")) {
 				removeFirefighter(Integer.parseInt(arr2[1]));
+			}
+			
+			if (arr2[0].equals("Task")) {
+				currentTask = new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2]));
+			}
+			if (arr2[0].equals("Wind")) {
+				windVelocity = new Velocity(Double.parseDouble(arr2[1]), Double.parseDouble(arr2[1]));
 			}
 		}
 	}
