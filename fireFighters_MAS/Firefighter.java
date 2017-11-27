@@ -284,7 +284,6 @@ public class Firefighter {
 				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
 				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
 			}
-
 		}
 	}
 
@@ -688,7 +687,7 @@ public class Firefighter {
 		// int lifetimefire = params.getInteger();
 		// int lifetimeforest = params.getInteger();
 		int maxvalue = Integer.MIN_VALUE;
-		GridPoint highscore = new GridPoint(null);
+		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
 
 		for (int x = 1; x <= gridXsize; x++) {
@@ -698,6 +697,10 @@ public class Firefighter {
 				int tempvalue = 0;
 				int dist = Tools.getDistance(Pos, p);
 				int fire = knowledge.getFire(p);
+				if (fire ==0 ) {
+					//no fire -> not a good position
+					continue;
+				}
 				tempvalue = tempvalue - dist - fire;
 
 				// check if the wind comes from the direction (its better to go into the same
@@ -707,7 +710,7 @@ public class Firefighter {
 				double directionfire = Tools.getAngle(p, Pos);
 				// distancefactor the farer the goal is away the less necessary is the wind for
 				// the values
-				int distancefactor = 360 / (8 * dist);
+				int distancefactor = 360 / (8 * dist+1);
 				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
 					tempvalue = tempvalue - dist;
 				}
@@ -738,7 +741,9 @@ public class Firefighter {
 				}
 			}
 		}
-
+		if(highscore==null) {
+			return grid.getLocation(this);
+		}
 		return highscore;
 	}
 
