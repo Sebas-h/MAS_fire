@@ -30,7 +30,7 @@ public class Knowledge {
 																	// firefighter presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge; // A hash with locations, and corresponding flags of rain
 																// presence in the knowledge
-
+	private LinkedHashMap<Integer,GridPoint> givenTasks;
 	// private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's
 	// of my friends
 	private Velocity windVelocity; // A knowledge about the wind velocity
@@ -44,6 +44,7 @@ public class Knowledge {
 		this.forestKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
+		this.givenTasks = new LinkedHashMap<Integer,GridPoint>();
 		this.windVelocity = null;
 		this.context = context;
 	}
@@ -194,6 +195,24 @@ public class Knowledge {
 		}
 		firefighterKnowledge.put(ID, pos);
 		return true;
+	}
+	public boolean addTask(Integer ID, GridPoint pos) {
+		for (Integer id : givenTasks.keySet()) {
+			if (id.equals(ID)) {
+				givenTasks.put(ID, pos);
+				return false;
+			}
+		}
+		givenTasks.put(ID, pos);
+		return true;
+	}
+	public GridPoint getTask(Integer ID) {
+		for (Integer id : givenTasks.keySet()) {
+			if (id.equals(ID)) {
+				return givenTasks.get(id);
+			}
+		}
+		return null;
 	}
 
 	/**

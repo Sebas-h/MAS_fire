@@ -270,9 +270,13 @@ public class Firefighter {
 			for (int followerID : followers.keySet()) {
 				TaskToGive = evaluate(followerID);
 				GridPoint destination = followers.get(followerID);
-				sendMessage(getTransmissionMethode(destination), new ArrayList<GridPoint>(Arrays.asList(destination)),
-						MessageType.TASK);
-				tasksSent++;
+
+				if (knowledge.getTask(followerID) != null && !(knowledge.getTask(followerID).equals(destination))) {
+					sendMessage(getTransmissionMethode(destination),
+							new ArrayList<GridPoint>(Arrays.asList(destination)), MessageType.TASK);
+					knowledge.addTask(followerID, TaskToGive);
+					tasksSent++;
+				}
 			}
 			// Send wind update
 			if (windUpdate) {
