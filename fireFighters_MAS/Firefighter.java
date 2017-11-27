@@ -113,7 +113,8 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-		if (knowledge.getCurrentTask()!=null&&myPos.equals(knowledge.getCurrentTask())) {
+		
+		if (knowledge.getCurrentTask() != null && myPos.equals(knowledge.getCurrentTask())) {
 			((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
 			knowledge.setCurrentTask(null);
 		}
@@ -571,6 +572,10 @@ public class Firefighter {
 		if (hasFire) {
 			knowledge.addFire(pos);
 		} else {
+			if (knowledge.getCurrentTask()!=null&&pos.equals(knowledge.getCurrentTask())) {
+					((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
+					knowledge.setCurrentTask(null);
+			}
 			knowledge.removeFire(pos);
 		}
 
@@ -709,6 +714,8 @@ public class Firefighter {
 	/**
 	 * This methods returns the Gridpoint which should be reached next by the
 	 * Firefighter (The next task)
+	 * this is only going to be executed by the leader
+	 * 
 	 * 
 	 * @param f
 	 *            current firefighter
@@ -733,8 +740,8 @@ public class Firefighter {
 				int tempvalue = 0;
 				int dist = Tools.getDistance(Pos, p);
 				int fire = knowledge.getFire(p);
-				if (fire ==0 ) {
-					//no fire -> not a good position
+				if (fire == 0) {
+					// no fire -> not a good position
 					continue;
 				}
 				tempvalue = tempvalue - dist - fire;
@@ -746,7 +753,7 @@ public class Firefighter {
 				double directionfire = Tools.getAngle(p, Pos);
 				// distancefactor the farer the goal is away the less necessary is the wind for
 				// the values
-				int distancefactor = 360 / (8 * dist+1);
+				int distancefactor = 360 / (8 * dist + 1);
 				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
 					tempvalue = tempvalue - dist;
 				}
@@ -777,7 +784,7 @@ public class Firefighter {
 				}
 			}
 		}
-		if(highscore==null) {
+		if (highscore == null) {
 			return grid.getLocation(this);
 		}
 		return highscore;
