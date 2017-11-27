@@ -36,6 +36,9 @@ public class Knowledge {
 	private Velocity windVelocity; // A knowledge about the wind velocity
 	private Context<Object> context;
 	private GridPoint currentTask;
+	private int radioDistance;
+	private GridPoint radioDistPosition;
+	
 
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
@@ -47,6 +50,25 @@ public class Knowledge {
 		this.givenTasks = new LinkedHashMap<Integer,GridPoint>();
 		this.windVelocity = null;
 		this.context = context;
+	}
+
+	public GridPoint getCurrentTask() {
+		return this.currentTask;
+	}
+	
+	public int getRadioDistance() {
+		return radioDistance;
+	}
+
+	public void setRadioDistance(int radioDistance) {
+		this.radioDistance = radioDistance;
+	}
+	public GridPoint getRadioDistPosition() {
+		return radioDistPosition;
+	}
+
+	public void setRadioDistPosition(GridPoint radioDistPosition) {
+		this.radioDistPosition = radioDistPosition;
 	}
 
 	/**
