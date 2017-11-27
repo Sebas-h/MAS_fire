@@ -51,7 +51,11 @@ public class Knowledge {
 		this.radioDistance = 0;
 		this.context = context;
 	}
-
+	
+	public GridPoint getCurrentTask() {
+		return this.currentTask;
+	}
+	
 	public int getRadioDistance() {
 		return radioDistance;
 	}

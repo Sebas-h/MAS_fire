@@ -180,7 +180,7 @@ public class Firefighter {
 				windUpdate = true;
 			}
 		} else {
-			moveOrExtinguish();
+			moveOrExtinguish(); // includes moving to task location
 		}
 		myPos = grid.getLocation(this);
 		knowledge.addFirefighter(myPos, id);
@@ -289,6 +289,12 @@ public class Firefighter {
 		}
 	}
 
+	private void moveToTask(GridPoint taskDestination) {
+		GridPoint myPos = grid.getLocation(this);
+		double angleToTaskDest = Tools.getAngle(myPos, taskDestination);
+		tryToMove(angleToTaskDest);	
+	}
+
 	/** Movement routine of a firefighter */
 	private void moveOrExtinguish() {
 		// TODO do not attack the fire from the front/against the wind direction
@@ -309,7 +315,11 @@ public class Firefighter {
 			else {
 				velocity.direction = directionToFire;
 			} // Turn to fire
-		} else if (distance > 1) {
+		} 
+		else if (knowledge.getCurrentTask() != null) {
+			moveToTask(knowledge.getCurrentTask());
+		}
+		else if (distance > 1) {
 			tryToMove(directionToFire);
 		} // If fire is more than extinguishingDistance away
 		else // Otherwise explore randomly
