@@ -732,7 +732,7 @@ public class Firefighter {
 		int maxvalue = Integer.MIN_VALUE;
 		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
-		GridPoint currenttask = knowledge.getcurrenttask(id);
+		GridPoint currenttask = knowledge.getCurrentTask()
 
 		for (int x = 1; x <= gridXsize; x++) {
 			for (int y = 1; y <= gridYsize; y++) {
