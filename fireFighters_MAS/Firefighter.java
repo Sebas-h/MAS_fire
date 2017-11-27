@@ -675,24 +675,65 @@ public class Firefighter {
 	 * @return next Task
 	 */
 	private GridPoint evaluate(int id) {
+		
+		// Get access to the user accessible parameters
+		Parameters params = RunEnvironment.getInstance().getParameters();
+		int gridXsize = params.getInteger("gridWidth");
+		int gridYsize = params.getInteger("gridHeight");
+		//int lifetimefire = params.getInteger();
+		//int lifetimeforest = params.getInteger(); 
+		int maxvalue = Integer.MIN_VALUE;
+		GridPoint highscore = new GridPoint(null);
 		GridPoint Pos = knowledge.getFirefighter(id);
-		// GridPoint myPos = grid.getLocation(this); grid.getLocation (Firefighter f)
-		int minDist = Integer.MAX_VALUE;
-		GridPoint temp = new GridPoint(null);
-		for (GridPoint p : knowledge.getAllFire()) // For all the fires in the firefighter's knowledge
-		{
-			int dist = Tools.getDistance(Pos, p);
-			// Determine if the fire is closest. If so, update distance and direction
-			// accordingly
-			if (dist < minDist) {
-				temp = p;
-				minDist = dist;
+		
+		for (int x =1 ; x <= gridXsize; x++) {
+			for (int y=1 ; y<= gridYsize; y++) {
+				GridPoint p = new GridPoint(x,y);
+				//evaluate the value of this gridpoint
+				int tempvalue = 0;
+				int dist = Tools.getDistance(Pos, p);
+				int fire = knowledge.getFire(p);
+				tempvalue = tempvalue - dist - fire;
+				
+				//check if the wind comes from the direction (its better to go into the same direction as the wind)
+				Velocity wind = knowledge.getWindVelocity();
+				double direction = wind.direction;
+				double directionfire = Tools.getAngle(p, Pos);
+				//distancefactor the farer the goal is away the less necessary is the wind for the values
+				int distancefactor = 360/(8*dist); 
+				if (directionfire - distancefactor  < direction && directionfire + distancefactor > direction) {
+					tempvalue = tempvalue - dist; 
+				}
+				
+				//if gridpoint is surrounded by fire it is not reachable
+				boolean check = true;
+				for (int i = -1; i <= 1; i++) {
+					for (int j = -1; j <= 1; j++) {
+						if (!(i == 0 && j == 0)) // Do not check the point at which standing
+						{
+							GridPoint surround = new GridPoint(x + i, y + j);
+
+							if (knowledge.getFire(surround) == 0) {
+								check= false;
+							}
+						}
+					}
+				}
+				if (check) {
+					tempvalue = Integer.MIN_VALUE;
+				}
+				
+				//check if value > maxvalue --> value = maxvalue --> highscoregridpoint = gridpoint pos
+				if (tempvalue > maxvalue) {
+					maxvalue = tempvalue;
+					highscore = p;
+				}
 			}
 		}
-
-		return temp;
+	
+		return highscore;
 	}
-
+	
 	/** Define the firefighter character */
 	private void assignRole() {
 		// If he doesn't know any one -> Role Alone
