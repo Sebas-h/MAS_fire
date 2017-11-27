@@ -34,8 +34,6 @@ public class Knowledge {
 	// private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's
 	// of my friends
 	private Velocity windVelocity; // A knowledge about the wind velocity
-	private GridPoint radioDistPosition;
-	private int radioDistance;
 	private Context<Object> context;
 	private GridPoint currentTask;
 
@@ -47,24 +45,7 @@ public class Knowledge {
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.windVelocity = null;
-		this.radioDistPosition= null;
-		this.radioDistance = 0;
 		this.context = context;
-	}
-
-	public int getRadioDistance() {
-		return radioDistance;
-	}
-
-	public void setRadioDistance(int radioDistance) {
-		this.radioDistance = radioDistance;
-	}
-	public GridPoint getRadioDistPosition() {
-		return radioDistPosition;
-	}
-
-	public void setRadioDistPosition(GridPoint radioDistPosition) {
-		this.radioDistPosition = radioDistPosition;
 	}
 
 	/**
@@ -353,9 +334,6 @@ public class Knowledge {
 			// str += "Firefighters " + entry.getValue().getX() + " " +
 			// entry.getValue().getY() + " " + entry.getKey()+";";
 		}
-		if(radioDistance!=0) {
-			str+="R"+radioDistance+";";
-		}
 		return str;
 	}
 
@@ -404,11 +382,6 @@ public class Knowledge {
 
 		for (int i = 0; i < arr1.length; i++) {
 			String[] arr2 = arr1[i].split(" ");
-			if(arr2.equals("P")){
-				radioDistPosition= new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2]));
-			}if(arr2.equals("R")){
-				radioDistance= Integer.parseInt(arr2[1]);
-			}
 			if (arr2[0].equals("Fire")) {
 				//TODO maybe add the current duration the fire is allready known
 				addFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
@@ -465,7 +438,6 @@ public class Knowledge {
 		for (GridPoint pos : k.getAllRain()) {
 			addRain(pos);
 		}
-		setRadioDistPosition(k.getRadioDistPosition());
 	}
 
 	// Local getters
