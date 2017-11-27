@@ -558,6 +558,10 @@ public class Knowledge {
 	public Velocity getWindVelocity() {
 		return windVelocity;
 	}
+	
+	public GridPoint getcurrentTask(int id) {
+		return currentTask;
+	}
 
 	// Local setters
 	/**
