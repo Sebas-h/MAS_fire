@@ -732,6 +732,7 @@ public class Firefighter {
 		int maxvalue = Integer.MIN_VALUE;
 		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
+		GridPoint currenttask = knowledge.getcurrenttask(id);
 
 		for (int x = 1; x <= gridXsize; x++) {
 			for (int y = 1; y <= gridYsize; y++) {
@@ -740,8 +741,8 @@ public class Firefighter {
 				int tempvalue = 0;
 				int dist = Tools.getDistance(Pos, p);
 				int fire = knowledge.getFire(p);
-				if (fire == 0) {
-					// no fire -> not a good position
+				if (fire ==0 ) {
+					//no fire -> not a good position
 					continue;
 				}
 				tempvalue = tempvalue - dist - fire;
@@ -753,9 +754,13 @@ public class Firefighter {
 				double directionfire = Tools.getAngle(p, Pos);
 				// distancefactor the farer the goal is away the less necessary is the wind for
 				// the values
-				int distancefactor = 360 / (8 * dist + 1);
+				int distancefactor = 360 / (8 * dist+1);
 				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
 					tempvalue = tempvalue - dist;
+				}
+				// currenttask is preferred
+				if (currenttask == p ) {
+					tempvalue = tempvalue +2;
 				}
 
 				// if gridpoint is surrounded by fire it is not reachable
@@ -784,7 +789,7 @@ public class Firefighter {
 				}
 			}
 		}
-		if (highscore == null) {
+		if(highscore==null) {
 			return grid.getLocation(this);
 		}
 		return highscore;
