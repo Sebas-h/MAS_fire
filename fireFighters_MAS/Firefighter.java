@@ -55,6 +55,7 @@ public class Firefighter {
 	Role role; // The character of the firefighter defining its behavior //TODO This should be
 				// implemented
 	boolean iWasLeader;
+	int radioDist;
 	GridPoint TaskToGive;
 	boolean windUpdate = false;
 
@@ -78,13 +79,14 @@ public class Firefighter {
 		this.grid = grid;
 		this.id = id;
 		this.role = Role.Alone;
-		tasksSent=0;
+		tasksSent = 0;
 		iWasLeader = false;
 		oldleader = id;
 		leader = id;
 		lifePoints = params.getInteger("firefighter_life");
 		strength = params.getInteger("firefighter_strength");
 		sightRange = params.getInteger("firefighter_sight_range");
+		radioDist = params.getInteger("firefighter_radio_range");
 		bounty = params.getInteger("firefighter_initial_bounty");
 		double initialSpeed = params.getDouble("firefighter_initial_speed");
 		double initialSpeedDeviation = params.getDouble("firefighter_initial_speed_deviation");
@@ -176,7 +178,8 @@ public class Firefighter {
 			Velocity oldWindVelocity = knowledge.getWindVelocity();
 			checkWeather();
 			Velocity windVelocity = knowledge.getWindVelocity();
-			if (oldWindVelocity==null||oldWindVelocity.direction != windVelocity.direction || oldWindVelocity.speed != windVelocity.speed) {
+			if (oldWindVelocity == null || oldWindVelocity.direction != windVelocity.direction
+					|| oldWindVelocity.speed != windVelocity.speed) {
 				windUpdate = true;
 			}
 		} else {
@@ -186,19 +189,14 @@ public class Firefighter {
 		knowledge.addFirefighter(myPos, id);
 		// Communication part (takes no time)
 
-		int radioDist = knowledge.getRadioDistance();
-		if (knowledge.getRadioDistPosition() != null) {
-			radioDist = Tools.getDistance(grid.getLocation(this), knowledge.getRadioDistPosition());
-			knowledge.setRadioDistance(radioDist);
-			sendMessage(TransmissionMethod.Radio,
-					new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))), MessageType.RADIOPING);
-		}
 		// split the follower in follower within the radio distance and the other ones.
 		ArrayList<GridPoint> radioFollower = new ArrayList<>();
 		ArrayList<GridPoint> satFollower = new ArrayList<>();
 		HashMap<Integer, GridPoint> followers = knowledge.getAllFirefighters();
 		// dont send message to himself
 		followers.remove(id);
+		// distribute all followers in the one which are in the radio range and they who
+		// a re not
 		for (GridPoint gridPoint : knowledge.getAllFirefighters().values()) {
 			if (Tools.getDistance(grid.getLocation(this), gridPoint) <= radioDist) {
 				radioFollower.add(gridPoint);
@@ -272,20 +270,21 @@ public class Firefighter {
 			for (int followerID : followers.keySet()) {
 				TaskToGive = evaluate(followerID);
 				GridPoint destination = followers.get(followerID);
-				sendMessage(getTransmissionMethode(new ArrayList<GridPoint>(Arrays.asList(destination))), new ArrayList<GridPoint>(Arrays.asList(destination)),
-						MessageType.TASK);
-				tasksSent++;
+
+				if (knowledge.getTask(followerID) != null && !(knowledge.getTask(followerID).equals(destination))) {
+					sendMessage(getTransmissionMethode(destination),
+							new ArrayList<GridPoint>(Arrays.asList(destination)), MessageType.TASK);
+					knowledge.addTask(followerID, TaskToGive);
+					tasksSent++;
+				}
 			}
 			// Send wind update
 			if (windUpdate) {
-					
-					sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
-					sendMessage(TransmissionMethod.Satellite,satFollower,MessageType.WIND);
+
+				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
+				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
 			}
-				// try to find the max radio distance. will only cost something if higher
-				// distance was found
-				sendMessage(TransmissionMethod.Radio, satFollower, MessageType.RADIOPING);
-			
+
 		}
 	}
 
@@ -598,15 +597,16 @@ public class Firefighter {
 		case OLDLEADER:
 			message.setContent(
 					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader + ";");
+			break;
 		case BYE:
 			message.setContent("Dead Firefighter " + id);
+			break;
 		case TASK:
 			message.setContent("Task " + TaskToGive.getX() + " " + TaskToGive.getY() + ";");
+			break;
 		case WIND:
-			message.setContent("Wind " + knowledge.getWindVelocity().speed+ " "+knowledge.getWindVelocity().direction+ ";");
-		case RADIOPING:
-			// only leader will send the ping
-			message.setContent("P" + myPos.getX() + " " + myPos.getY());
+			message.setContent(
+					"Wind " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction + ";");
 			break;
 		default:
 			break;
@@ -672,8 +672,13 @@ public class Firefighter {
 	 *            - location of the firefighter that has to be reached
 	 * @return TransmissionMethod
 	 */
-	private TransmissionMethod getTransmissionMethode(ArrayList<GridPoint> destination) {
-		return TransmissionMethod.Satellite;
+	private TransmissionMethod getTransmissionMethode(GridPoint destination) {
+		if (Tools.getDistance(grid.getLocation(this), destination) <= radioDist) {
+			return TransmissionMethod.Radio;
+		} else {
+			return TransmissionMethod.Satellite;
+		}
+
 	}
 
 	/**
@@ -685,37 +690,39 @@ public class Firefighter {
 	 * @return next Task
 	 */
 	private GridPoint evaluate(int id) {
-		
+
 		// Get access to the user accessible parameters
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		int gridXsize = params.getInteger("gridWidth");
 		int gridYsize = params.getInteger("gridHeight");
-		//int lifetimefire = params.getInteger();
-		//int lifetimeforest = params.getInteger(); 
+		// int lifetimefire = params.getInteger();
+		// int lifetimeforest = params.getInteger();
 		int maxvalue = Integer.MIN_VALUE;
 		GridPoint highscore = new GridPoint(null);
 		GridPoint Pos = knowledge.getFirefighter(id);
-		
-		for (int x =1 ; x <= gridXsize; x++) {
-			for (int y=1 ; y<= gridYsize; y++) {
-				GridPoint p = new GridPoint(x,y);
-				//evaluate the value of this gridpoint
+
+		for (int x = 1; x <= gridXsize; x++) {
+			for (int y = 1; y <= gridYsize; y++) {
+				GridPoint p = new GridPoint(x, y);
+				// evaluate the value of this gridpoint
 				int tempvalue = 0;
 				int dist = Tools.getDistance(Pos, p);
 				int fire = knowledge.getFire(p);
 				tempvalue = tempvalue - dist - fire;
-				
-				//check if the wind comes from the direction (its better to go into the same direction as the wind)
+
+				// check if the wind comes from the direction (its better to go into the same
+				// direction as the wind)
 				Velocity wind = knowledge.getWindVelocity();
 				double direction = wind.direction;
 				double directionfire = Tools.getAngle(p, Pos);
-				//distancefactor the farer the goal is away the less necessary is the wind for the values
-				int distancefactor = 360/(8*dist); 
-				if (directionfire - distancefactor  < direction && directionfire + distancefactor > direction) {
-					tempvalue = tempvalue - dist; 
+				// distancefactor the farer the goal is away the less necessary is the wind for
+				// the values
+				int distancefactor = 360 / (8 * dist);
+				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
+					tempvalue = tempvalue - dist;
 				}
-				
-				//if gridpoint is surrounded by fire it is not reachable
+
+				// if gridpoint is surrounded by fire it is not reachable
 				boolean check = true;
 				for (int i = -1; i <= 1; i++) {
 					for (int j = -1; j <= 1; j++) {
@@ -724,7 +731,7 @@ public class Firefighter {
 							GridPoint surround = new GridPoint(x + i, y + j);
 
 							if (knowledge.getFire(surround) == 0) {
-								check= false;
+								check = false;
 							}
 						}
 					}
@@ -732,18 +739,19 @@ public class Firefighter {
 				if (check) {
 					tempvalue = Integer.MIN_VALUE;
 				}
-				
-				//check if value > maxvalue --> value = maxvalue --> highscoregridpoint = gridpoint pos
+
+				// check if value > maxvalue --> value = maxvalue --> highscoregridpoint =
+				// gridpoint pos
 				if (tempvalue > maxvalue) {
 					maxvalue = tempvalue;
 					highscore = p;
 				}
 			}
 		}
-	
+
 		return highscore;
 	}
-	
+
 	/** Define the firefighter character */
 	private void assignRole() {
 		// If he doesn't know any one -> Role Alone
@@ -834,9 +842,10 @@ public class Firefighter {
 	public int getBounty() {
 		return bounty;
 	}
-	
+
 	/**
 	 * Get the currently sent tasks
+	 * 
 	 * @return the number of tasks
 	 */
 	public int getTasksSent() {
