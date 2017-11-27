@@ -448,7 +448,7 @@ public class Knowledge {
 			}
 			
 			if (arr2[0].equals("Task")) {
-				currentTask = new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2]));
+				setCurrentTask(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 				//increment the counter for the received and accepted tasks:
 				((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).incrementCounter();
 				((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).incrementCounter();
@@ -482,6 +482,10 @@ public class Knowledge {
 		for (GridPoint pos : k.getAllRain()) {
 			addRain(pos);
 		}
+		if(k.getCurrentTask()!=null) {
+			setCurrentTask(k.getCurrentTask());
+		}
+		
 	}
 
 	// Local getters

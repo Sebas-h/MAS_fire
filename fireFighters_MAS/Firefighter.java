@@ -139,35 +139,7 @@ public class Firefighter {
 		// Check if firefighter is leader, follower or alone
 		assignRole();
 
-		// System.out.println(" ");
-		// System.out.print("Firefighter " + id);
-		// System.out.print(" is " + role + ", ");
-		// if (role == Role.Leader) {
-		// System.out.print("followers are ");
-		// HashMap<Integer, GridPoint> friends = knowledge.getAllFirefighters();
-		// for (int friendId : friends.keySet()) {
-		// System.out.print(friendId + ", ");
-		// }
-		// System.out.print("Connection failed to: ");
-		// for (int friendID : friends.keySet()) {
-		// Firefighter friend = (Firefighter) Tools.getObjectOfTypeAt(grid,
-		// Firefighter.class,
-		// friends.get(friendID));
-		// if (friend == null)
-		// System.out.print(friendID + " ");
-		// }
-		//
-		// }
-		// if (role == Role.Follower) {
-		// System.out.print("leader is " + leader);
-		// Firefighter myleader = (Firefighter) Tools.getObjectOfTypeAt(grid,
-		// Firefighter.class,
-		// knowledge.getAllFirefighters().get(leader));
-		// if (myleader == null)
-		// System.out.print(" - Follower has no connection!");
-		//
-		// }
-
+		
 		// Action part (takes one step)
 		boolean checkWeather = false;
 		boolean leaderMoved = false;
@@ -276,7 +248,7 @@ public class Firefighter {
 				TaskToGive = evaluate(followerID);
 				GridPoint destination = followers.get(followerID);
 
-				if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(destination))) {
+				if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
 					sendMessage(getTransmissionMethode(destination),
 							new ArrayList<GridPoint>(Arrays.asList(destination)), MessageType.TASK);
 					knowledge.addTask(followerID, TaskToGive);
@@ -731,7 +703,7 @@ public class Firefighter {
 		int maxvalue = Integer.MIN_VALUE;
 		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
-		GridPoint currenttask = knowledge.getCurrentTask()
+		GridPoint currenttask = knowledge.getCurrentTask();
 
 		for (int x = 1; x <= gridXsize; x++) {
 			for (int y = 1; y <= gridYsize; y++) {
