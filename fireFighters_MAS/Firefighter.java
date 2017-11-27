@@ -113,7 +113,7 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-		
+
 		if (knowledge.getCurrentTask() != null && myPos.equals(knowledge.getCurrentTask())) {
 			((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
 			knowledge.setCurrentTask(null);
@@ -548,9 +548,9 @@ public class Firefighter {
 		if (hasFire) {
 			knowledge.addFire(pos);
 		} else {
-			if (knowledge.getCurrentTask()!=null&&pos.equals(knowledge.getCurrentTask())) {
-					((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
-					knowledge.setCurrentTask(null);
+			if (knowledge.getCurrentTask() != null && pos.equals(knowledge.getCurrentTask())) {
+				((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
+				knowledge.setCurrentTask(null);
 			}
 			knowledge.removeFire(pos);
 		}
@@ -689,8 +689,7 @@ public class Firefighter {
 
 	/**
 	 * This methods returns the Gridpoint which should be reached next by the
-	 * Firefighter (The next task)
-	 * this is only going to be executed by the leader
+	 * Firefighter (The next task) this is only going to be executed by the leader
 	 * 
 	 * 
 	 * @param f
@@ -721,7 +720,14 @@ public class Firefighter {
 					continue;
 				}
 				tempvalue = tempvalue - dist - fire;
-
+				for (int tmpID : knowledge.getAllFirefighters().keySet()) {
+					if (knowledge.getTask(tmpID) != null && knowledge.getTask(tmpID).equals(p)) {
+						// TODO how big is this factor?+ only once;change value if already a few
+						// firefighters?
+						tempvalue += 4;
+						break;
+					}
+				}
 				// check if the wind comes from the direction (its better to go into the same
 				// direction as the wind)
 				Velocity wind = knowledge.getWindVelocity();
