@@ -275,7 +275,7 @@ public class Firefighter {
 				TaskToGive = evaluate(followerID);
 				GridPoint destination = followers.get(followerID);
 
-				if (knowledge.getTask(followerID) != null && !(knowledge.getTask(followerID).equals(destination))) {
+				if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(destination))) {
 					sendMessage(getTransmissionMethode(destination),
 							new ArrayList<GridPoint>(Arrays.asList(destination)), MessageType.TASK);
 					knowledge.addTask(followerID, TaskToGive);

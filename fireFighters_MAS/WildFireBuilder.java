@@ -192,12 +192,12 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	public int getTaskCompletitionPercent() {
 		double taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
 		int taskcompleted = ((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).getCounter();
-		return (int) Math.round(taskcompleted / taskaccepted);
+		return (int) Math.round((taskcompleted / taskaccepted)*100);
 	}
 
 	public int getTaskAcceptancePercent() {
 		double tasknum = ((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).getCounter();
 		int taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
-		return (int) Math.round(taskaccepted / tasknum);
+		return (int) Math.round((taskaccepted / tasknum)*100);
 	}
 }
