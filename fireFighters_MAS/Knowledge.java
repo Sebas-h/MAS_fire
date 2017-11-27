@@ -8,6 +8,9 @@ import java.util.Map;
 import globalcounter.FireKnowledgeUpdateCounter;
 import globalcounter.ForestKnowledgeUpdateCounter;
 import globalcounter.IGlobalCounter;
+import globalcounter.MessageSentCounter;
+import globalcounter.TaskAcceptedCounter;
+import globalcounter.TaskReceiveCounter;
 import repast.simphony.context.Context;
 import repast.simphony.space.grid.GridPoint;
 
@@ -429,6 +432,9 @@ public class Knowledge {
 			
 			if (arr2[0].equals("Task")) {
 				currentTask = new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2]));
+				//increment the counter for the received and accepted tasks:
+				((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).incrementCounter();
+				((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).incrementCounter();
 			}
 			if (arr2[0].equals("Wind")) {
 				windVelocity = new Velocity(Double.parseDouble(arr2[1]), Double.parseDouble(arr2[1]));

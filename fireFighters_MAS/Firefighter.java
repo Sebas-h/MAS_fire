@@ -44,6 +44,7 @@ public class Firefighter {
 	private Velocity velocity; // Vector describing the firefighter movement's heading and speed
 	private int sightRange; // Number of cells defining how far the firefighter can see around
 	private int bounty; // Bounty units the firefighter has
+	private int tasksSent;
 	// Local variables initialization
 	private boolean newInfo; // Flag if the firefighter has a new info to communicate to peers
 	private Knowledge knowledge; // A knowledge the firefighter has
@@ -77,6 +78,7 @@ public class Firefighter {
 		this.grid = grid;
 		this.id = id;
 		this.role = Role.Alone;
+		tasksSent=0;
 		iWasLeader = false;
 		oldleader = id;
 		leader = id;
@@ -272,6 +274,7 @@ public class Firefighter {
 				GridPoint destination = followers.get(followerID);
 				sendMessage(getTransmissionMethode(new ArrayList<GridPoint>(Arrays.asList(destination))), new ArrayList<GridPoint>(Arrays.asList(destination)),
 						MessageType.TASK);
+				tasksSent++;
 			}
 			// Send wind update
 			if (windUpdate) {
@@ -779,6 +782,14 @@ public class Firefighter {
 	 */
 	public int getBounty() {
 		return bounty;
+	}
+	
+	/**
+	 * Get the currently sent tasks
+	 * @return the number of tasks
+	 */
+	public int getTasksSent() {
+		return tasksSent;
 	}
 
 	/**

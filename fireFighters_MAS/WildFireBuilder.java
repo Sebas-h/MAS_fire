@@ -7,6 +7,9 @@ import globalcounter.IGlobalCounter;
 import globalcounter.MessageSentCounter;
 import globalcounter.MsgMethodCounter;
 import globalcounter.RadioMsgCounter;
+import globalcounter.TaskAcceptedCounter;
+import globalcounter.TaskCompleteCounter;
+import globalcounter.TaskReceiveCounter;
 
 import com.jgoodies.binding.adapter.RadioButtonAdapter;
 
@@ -113,6 +116,9 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 		context.add(new AvgMessageLength());
 		context.add(new RadioMsgCounter());
 		context.add(new MsgMethodCounter());
+		context.add(new TaskReceiveCounter());
+		context.add(new TaskAcceptedCounter());
+		context.add(new TaskCompleteCounter());
 
 		return context;
 	}
@@ -161,21 +167,37 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	}
 
 	/**
-	 * gets the percentag of succesfully sent messages via the radio method in view of totally sucessfully sent messages
+	 * gets the percentag of succesfully sent messages via the radio method in view
+	 * of totally sucessfully sent messages
+	 * 
 	 * @return
 	 */
 	public int getRadioSentPercentage() {
-		return (int)Math.round((((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).getCounter()
+		return (int) Math.round((((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).getCounter()
 				/ (double) ((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()) * 100);
 	}
-	
+
 	/**
-	 * returns the average amount of the messages sucessfully sent per performing a broadcast/message sending.
+	 * returns the average amount of the messages sucessfully sent per performing a
+	 * broadcast/message sending.
+	 * 
 	 * @return
 	 */
 	public int avgContactsSentTo() {
-		return (int)Math.round((((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()
+		return (int) Math.round((((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter()
 				/ (double) ((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).getCounter()));
 
+	}
+
+	public int getTaskCompletitionPercent() {
+		double taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
+		int taskcompleted = ((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).getCounter();
+		return (int) Math.round(taskcompleted / taskaccepted);
+	}
+
+	public int getTaskAcceptancePercent() {
+		double tasknum = ((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).getCounter();
+		int taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
+		return (int) Math.round(taskaccepted / tasknum);
 	}
 }
