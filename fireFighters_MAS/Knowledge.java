@@ -559,9 +559,6 @@ public class Knowledge {
 		return windVelocity;
 	}
 	
-	public GridPoint getcurrentTask(int id) {
-		return currentTask;
-	}
 
 	// Local setters
 	/**
