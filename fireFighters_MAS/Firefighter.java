@@ -176,7 +176,7 @@ public class Firefighter {
 			Velocity oldWindVelocity = knowledge.getWindVelocity();
 			checkWeather();
 			Velocity windVelocity = knowledge.getWindVelocity();
-			if (oldWindVelocity.direction != windVelocity.direction || oldWindVelocity.speed != windVelocity.speed) {
+			if (oldWindVelocity==null||oldWindVelocity.direction != windVelocity.direction || oldWindVelocity.speed != windVelocity.speed) {
 				windUpdate = true;
 			}
 		} else {
