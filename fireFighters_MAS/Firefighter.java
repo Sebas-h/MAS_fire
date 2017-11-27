@@ -291,11 +291,33 @@ public class Firefighter {
 			}
 		}
 	}
-
-	private void moveToTask(GridPoint taskDestination) {
+	
+	/**
+	 * Executes task; either moving closer to task destination 
+	 * or extinguishing fire at task destination
+	 * @param taskDestination gridpoint of task destination
+	 */
+	private void executeTask(GridPoint taskDestination) {
 		GridPoint myPos = grid.getLocation(this);
-		double angleToTaskDest = Tools.getAngle(myPos, taskDestination);
-		tryToMove(angleToTaskDest);
+		double angleToTask = Tools.getAngle(myPos, taskDestination);
+		double distanceToTask = Tools.getDistance(myPos, taskDestination);
+		
+		// One grid cell away from task destination (i.e. the fire to be extinguished)
+		if (distanceToTask == 1) {
+			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
+			// Extinguish the fire in the direction of heading:
+			if (taskDestination.equals(sightPos)) {
+				extinguishFire(angleToTask);
+			} 
+			// Turn to fire:
+			else {
+				velocity.direction = angleToTask;
+			}
+		}
+		// Move toward the task destination:
+		else {
+			tryToMove(angleToTask);	
+		}
 	}
 
 	/** Movement routine of a firefighter */
@@ -305,22 +327,24 @@ public class Firefighter {
 		double directionToFire = result[0];
 		double distance = result[1];
 
-		if (distance == 1) // If fire is exactly at the extinguishingDistance
-		{
-			GridPoint myPos = grid.getLocation(this);
-			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
-			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
-			// System.out.println("x:" + firePos.getX() + " y:" + firePos.getY());
-			// System.out.println("x:" + sightPos.getX() + " y:" + sightPos.getY());
-			if (firePos.equals(sightPos)) {
-				extinguishFire(directionToFire);
-			} // Extinguish the fire in the direction of heading
-			else {
-				velocity.direction = directionToFire;
-			} // Turn to fire
-		} else if (knowledge.getCurrentTask() != null) {
-			moveToTask(knowledge.getCurrentTask());
-		} else if (distance > 1) {
+//		if (distance == 1) // If fire is exactly at the extinguishingDistance
+//		{
+//			GridPoint myPos = grid.getLocation(this);
+//			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
+//			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
+//			if (firePos.equals(sightPos)) {
+//				extinguishFire(directionToFire);
+//			} // Extinguish the fire in the direction of heading
+//			else {
+//				velocity.direction = directionToFire;
+//			} // Turn to fire
+//		} 
+//		else 
+		
+		if (knowledge.getCurrentTask() != null) {
+			executeTask(knowledge.getCurrentTask());
+		}
+		else if (distance > 1) {
 			tryToMove(directionToFire);
 		} // If fire is more than extinguishingDistance away
 		else // Otherwise explore randomly
@@ -707,6 +731,7 @@ public class Firefighter {
 		int maxvalue = Integer.MIN_VALUE;
 		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
+		GridPoint currenttask = knowledge.getCurrentTask()
 
 		for (int x = 1; x <= gridXsize; x++) {
 			for (int y = 1; y <= gridYsize; y++) {
@@ -715,8 +740,8 @@ public class Firefighter {
 				int tempvalue = 0;
 				int dist = Tools.getDistance(Pos, p);
 				int fire = knowledge.getFire(p);
-				if (fire == 0) {
-					// no fire -> not a good position
+				if (fire ==0 ) {
+					//no fire -> not a good position
 					continue;
 				}
 				tempvalue = tempvalue - dist - fire;
@@ -735,9 +760,13 @@ public class Firefighter {
 				double directionfire = Tools.getAngle(p, Pos);
 				// distancefactor the farer the goal is away the less necessary is the wind for
 				// the values
-				int distancefactor = 360 / (8 * dist + 1);
+				int distancefactor = 360 / (8 * dist+1);
 				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
 					tempvalue = tempvalue - dist;
+				}
+				// currenttask is preferred
+				if (currenttask == p ) {
+					tempvalue = tempvalue +2;
 				}
 
 				// if gridpoint is surrounded by fire it is not reachable
@@ -766,7 +795,7 @@ public class Firefighter {
 				}
 			}
 		}
-		if (highscore == null) {
+		if(highscore==null) {
 			return grid.getLocation(this);
 		}
 		return highscore;

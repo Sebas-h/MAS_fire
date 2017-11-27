@@ -558,6 +558,7 @@ public class Knowledge {
 	public Velocity getWindVelocity() {
 		return windVelocity;
 	}
+	
 
 	// Local setters
 	/**
