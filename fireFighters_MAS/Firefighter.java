@@ -54,6 +54,8 @@ public class Firefighter {
 	Role role; // The character of the firefighter defining its behavior //TODO This should be
 				// implemented
 	boolean iWasLeader;
+	GridPoint TaskToGive;
+	boolean windUpdate = false;
 
 	Integer leader;
 	Integer oldleader;
@@ -109,7 +111,7 @@ public class Firefighter {
 		GridPoint myPos = grid.getLocation(this);
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
-		// increases a score for each known fire by 1 
+		// increases a score for each known fire by 1
 		knowledge.increaseFireScore();
 
 		if (checkSurroundedByFire()) // If caught by fire, die
@@ -128,32 +130,34 @@ public class Firefighter {
 		// Check if firefighter is leader, follower or alone
 		assignRole();
 
-		System.out.println(" ");
-		System.out.print("Firefighter " + id);
-		System.out.print(" is " + role + ", ");
-		if (role == Role.Leader) {
-			System.out.print("followers are ");
-			HashMap<Integer, GridPoint> friends = knowledge.getAllFirefighters();
-			for (int friendId : friends.keySet()) {
-				System.out.print(friendId + ", ");
-			}
-			System.out.print("Connection failed to: ");
-			for (int friendID : friends.keySet()) {
-				Firefighter friend = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class,
-						friends.get(friendID));
-				if (friend == null)
-					System.out.print(friendID + " ");
-			}
-
-		}
-		if (role == Role.Follower) {
-			System.out.print("leader is " + leader);
-			Firefighter myleader = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class,
-					knowledge.getAllFirefighters().get(leader));
-			if (myleader == null)
-				System.out.print(" - Follower has no connection!");
-
-		}
+		// System.out.println(" ");
+		// System.out.print("Firefighter " + id);
+		// System.out.print(" is " + role + ", ");
+		// if (role == Role.Leader) {
+		// System.out.print("followers are ");
+		// HashMap<Integer, GridPoint> friends = knowledge.getAllFirefighters();
+		// for (int friendId : friends.keySet()) {
+		// System.out.print(friendId + ", ");
+		// }
+		// System.out.print("Connection failed to: ");
+		// for (int friendID : friends.keySet()) {
+		// Firefighter friend = (Firefighter) Tools.getObjectOfTypeAt(grid,
+		// Firefighter.class,
+		// friends.get(friendID));
+		// if (friend == null)
+		// System.out.print(friendID + " ");
+		// }
+		//
+		// }
+		// if (role == Role.Follower) {
+		// System.out.print("leader is " + leader);
+		// Firefighter myleader = (Firefighter) Tools.getObjectOfTypeAt(grid,
+		// Firefighter.class,
+		// knowledge.getAllFirefighters().get(leader));
+		// if (myleader == null)
+		// System.out.print(" - Follower has no connection!");
+		//
+		// }
 
 		// Action part (takes one step)
 		boolean checkWeather = false;
@@ -163,11 +167,16 @@ public class Firefighter {
 			checkWeather = true;
 		}
 
-		if (knowledge.getFire(myPos)>0) {
+		if (knowledge.getFire(myPos) > 0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
 			leaderMoved = true;
 		} else if (checkWeather) {
+			Velocity oldWindVelocity = knowledge.getWindVelocity();
 			checkWeather();
+			Velocity windVelocity = knowledge.getWindVelocity();
+			if (oldWindVelocity.direction != windVelocity.direction || oldWindVelocity.speed != windVelocity.speed) {
+				windUpdate = true;
+			}
 		} else {
 			moveOrExtinguish();
 		}
@@ -195,11 +204,11 @@ public class Firefighter {
 				satFollower.add(gridPoint);
 			}
 		}
-		//TODO: Everyone thinks forest is evrwhere and only send dead forest
-		//TODO: Maybe leave group if I have no more bounty?
+		// TODO: Everyone thinks forest is evrwhere and only send dead forest
+		// TODO: Maybe leave group if I have no more bounty?
 
 		// Handwaving to everyone in my sight
-		//TODO: Don't send him this message if I already informed my leader about him
+		// TODO: Don't send him this message if I already informed my leader about him
 		sendMessage(TransmissionMethod.Radio, sightedFirefighters, MessageType.LEADER);
 
 		// Distinguish between people in my radio sight and people who are not
@@ -212,7 +221,7 @@ public class Firefighter {
 
 		// Communicating to Follower and Leader
 		if (role == Role.Follower) {
-		//TODO: Only send things, if anything has changed
+			// TODO: Only send things, if anything has changed
 			// If there is a leader change:
 			if (oldleader != leader) {
 				// Update all the firefighters in my knowledge, that there is a new leader
@@ -229,7 +238,7 @@ public class Firefighter {
 					sendMessage(leaderMethod, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
 							MessageType.OLDLEADER);
 					// Send leader what I can see
-					//TODO: Only send stuff that changed
+					// TODO: Only send stuff that changed
 					sendMessage(leaderMethod, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
 							MessageType.ISEE);
 				} else if (oldleader == this.id) {
@@ -249,19 +258,31 @@ public class Firefighter {
 				}
 				// Send leader what I can see if he hasn't changed
 			} else
-				//TODO: Only send stuff that changed
+				// TODO: Only send stuff that changed
 				sendMessage(leaderMethod, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
 						MessageType.ISEE);
 
 		} else if (role == Role.Leader) {
 			// Don't send message to myself
-			//TODO Update followers only with additional knowledge leader gained in the last tick but send new followers all knowledge
-			//TODO Send followers wind information in case of change
-			sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.ALL);
-			sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.ALL);
-			// try to find the max radio distance. will only cost something if higher
-			// distance was found
-			sendMessage(TransmissionMethod.Radio, satFollower, MessageType.RADIOPING);
+			// TODO Send followers wind information in case of change
+
+			// Send each follower specific task
+			for (int followerID : followers.keySet()) {
+				TaskToGive = evaluate(followerID);
+				GridPoint destination = followers.get(followerID);
+				sendMessage(getTransmissionMethode(new ArrayList<GridPoint>(Arrays.asList(destination))), new ArrayList<GridPoint>(Arrays.asList(destination)),
+						MessageType.TASK);
+			}
+			// Send wind update
+			if (windUpdate) {
+					
+					sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
+					sendMessage(TransmissionMethod.Satellite,satFollower,MessageType.WIND);
+			}
+				// try to find the max radio distance. will only cost something if higher
+				// distance was found
+				sendMessage(TransmissionMethod.Radio, satFollower, MessageType.RADIOPING);
+			
 		}
 	}
 
@@ -403,7 +424,7 @@ public class Firefighter {
 				{
 					GridPoint pos = new GridPoint(myPos.getX() + i, myPos.getY() + j);
 
-					if (knowledge.getFire(pos)==0) {
+					if (knowledge.getFire(pos) == 0) {
 						return false;
 					}
 				}
@@ -449,7 +470,7 @@ public class Firefighter {
 		if (Tools.isWithinBorders(newPos, grid)) {
 			checkCell(newPos);
 
-			boolean hasFire = knowledge.getFire(newPos)>0;
+			boolean hasFire = knowledge.getFire(newPos) > 0;
 			boolean hasFirefighter = hasFirefighter(newPos);
 
 			if (!hasFire && !hasFirefighter) // Make sure that the cell is not on fire, and is not occupied by another
@@ -566,6 +587,10 @@ public class Firefighter {
 					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader + ";");
 		case BYE:
 			message.setContent("Dead Firefighter " + id);
+		case TASK:
+			message.setContent("Task " + TaskToGive.getX() + " " + TaskToGive.getY() + ";");
+		case WIND:
+			message.setContent("Wind " + knowledge.getWindVelocity().speed+ " "+knowledge.getWindVelocity().direction+ ";");
 		case RADIOPING:
 			// only leader will send the ping
 			message.setContent("P" + myPos.getX() + " " + myPos.getY());
@@ -626,11 +651,24 @@ public class Firefighter {
 		receivedKnowledge.convertFromString(message.getContent());
 		knowledge.updateFromKnowledge(receivedKnowledge);
 	}
-	
+
 	/**
-	 * This methods returns the Gridpoint which should be reached next by the Firefighter
-	 * (The next task)
-	 * @param f current firefighter
+	 * Chooses if message should be send over Radio or Satellite
+	 * 
+	 * @param destination
+	 *            - location of the firefighter that has to be reached
+	 * @return TransmissionMethod
+	 */
+	private TransmissionMethod getTransmissionMethode(ArrayList<GridPoint> destination) {
+		return TransmissionMethod.Satellite;
+	}
+
+	/**
+	 * This methods returns the Gridpoint which should be reached next by the
+	 * Firefighter (The next task)
+	 * 
+	 * @param f
+	 *            current firefighter
 	 * @return next Task
 	 */
 	private GridPoint evaluate(int id) {
@@ -647,8 +685,8 @@ public class Firefighter {
 				temp = p;
 				minDist = dist;
 			}
-		}	
-		
+		}
+
 		return temp;
 	}
 
@@ -698,6 +736,9 @@ public class Firefighter {
 
 			IndexedIterable<Object> rains = context.getObjects(Rain.class);
 
+			// Removes all rain objects from knowledge
+			knowledge.removeAllRain();
+			// Add accurate rain knowledge
 			for (Object o : rains) {
 				knowledge.addRain(grid.getLocation(o));
 			}
