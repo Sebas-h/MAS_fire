@@ -55,6 +55,9 @@ public class Knowledge {
 	public GridPoint getCurrentTask() {
 		return this.currentTask;
 	}
+	public void setCurrentTask(GridPoint currentTask) {
+		this.currentTask = currentTask;
+	}
 	
 	public int getRadioDistance() {
 		return radioDistance;
