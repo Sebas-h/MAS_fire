@@ -113,10 +113,7 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-		if (knowledge.getCurrentTask()!=null&&myPos.equals(knowledge.getCurrentTask())) {
-			((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
-			knowledge.setCurrentTask(null);
-		}
+		
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
 		// increases a score for each known fire by 1
@@ -549,6 +546,10 @@ public class Firefighter {
 		if (hasFire) {
 			knowledge.addFire(pos);
 		} else {
+			if (knowledge.getCurrentTask()!=null&&pos.equals(knowledge.getCurrentTask())) {
+					((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
+					knowledge.setCurrentTask(null);
+			}
 			knowledge.removeFire(pos);
 		}
 
