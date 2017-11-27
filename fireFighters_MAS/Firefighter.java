@@ -544,10 +544,10 @@ public class Firefighter {
 		if (hasFire) {
 			knowledge.addFire(pos);
 		} else {
-			if (knowledge.getCurrentTask() != null && pos.equals(knowledge.getCurrentTask())) {
-				((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
-				knowledge.setCurrentTask(null);
-			}
+			//if (knowledge.getCurrentTask() != null && pos.equals(knowledge.getCurrentTask())) {
+			//	((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
+			//	knowledge.setCurrentTask(null);
+			//}
 			knowledge.removeFire(pos);
 		}
 
