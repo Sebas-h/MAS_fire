@@ -237,7 +237,7 @@ public class Firefighter {
 				}
 			}
 			// Send wind update
-			if (windUpdate) {
+			if (windUpdate && knowledge.getAllFire() != null) {
 				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
 				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
 			}
