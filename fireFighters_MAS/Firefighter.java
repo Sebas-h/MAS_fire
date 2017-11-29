@@ -285,8 +285,8 @@ public class Firefighter {
 		}
 		else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) {
 			// try +45 degrees and -45 degrees
-			// which ever one gets me to within 1 distance of the task dest
-			// is the angle I will choose to move to
+			// which ever one gets me to within 1 distance of the task
+			// is the angle I will choose to move with
 			double angleToMove = angleToTask;
 			if(Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove + 45.0, myPos)) == 1)
 				angleToMove += 45.0;
@@ -322,28 +322,13 @@ public class Firefighter {
 		double directionToFire = result[0];
 		double distance = result[1];
 
-//		if (distance == 1) // If fire is exactly at the extinguishingDistance
-//		{
-//			GridPoint myPos = grid.getLocation(this);
-//			GridPoint firePos = Tools.dirToCoord(directionToFire, myPos);
-//			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
-//			if (firePos.equals(sightPos)) {
-//				extinguishFire(directionToFire);
-//			} // Extinguish the fire in the direction of heading
-//			else {
-//				velocity.direction = directionToFire;
-//			} // Turn to fire
-//		} 
-//		else 
-		
 		if (knowledge.getCurrentTask() != null) {
 			executeTask(knowledge.getCurrentTask());
 		}
-		else if (distance > 1) {
+		else if (distance > 1) { // If fire is more than extinguishingDistance away
 			tryToMove(directionToFire);
-		} // If fire is more than extinguishingDistance away
-		else // Otherwise explore randomly
-		{
+		} 
+		else { // Otherwise explore randomly
 			velocity.direction = RandomHelper.nextDoubleFromTo(0, 360);
 			tryToMove(velocity.direction);
 		}
