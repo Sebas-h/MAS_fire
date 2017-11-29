@@ -286,10 +286,36 @@ public class Firefighter {
 				velocity.direction = angleToTask;
 			}
 		}
+		else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) {
+			// try +45 degrees and -45 degrees
+			// which ever one gets me to within 1 distance of the task dest
+			// is the angle I will choose to move to
+			double angleToMove = angleToTask;
+			if(Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove + 45.0, myPos)) == 1)
+				angleToMove += 45.0;
+			else if(Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove - 45.0, myPos)) == 1)
+				angleToMove -= 45.0;
+			tryToMove(angleToMove);
+		}
 		// Move toward the task destination:
 		else {
 			tryToMove(angleToTask);	
 		}
+	}
+	
+	/**
+	 * Checks if the is a firefighter on the next square
+	 * given a grid point and direction to go in.
+	 * @param point Current grid point
+	 * @param direction Direction to head in
+	 * @return Boolean
+	 */
+	private boolean nextSquareOccupied(GridPoint point, double direction) {
+		GridPoint nextPoint = Tools.dirToCoord(direction, point);
+		for (GridPoint p : knowledge.getAllFirefighters().values()) {
+			if (p.equals(nextPoint)) return true;
+		}
+		return false;
 	}
 
 	/** Movement routine of a firefighter */
