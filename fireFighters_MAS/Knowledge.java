@@ -208,9 +208,16 @@ public class Knowledge {
 	 * 
 	 * @param pos
 	 *            -position of the empty gridpoint
+	 * @return true if burned forest is new, false if it is already in the knowledge
 	 */
-	public void addBurnedForest(GridPoint pos) {
+	public boolean addBurnedForest(GridPoint pos) {
+		for (GridPoint p : forestKnowledge.keySet()) {
+			if (pos.equals(p)) {
+				return false;
+			}
+		}
 		forestKnowledge.put(pos, false);
+		return true;
 	}
 
 	/**

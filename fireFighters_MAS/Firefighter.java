@@ -48,6 +48,7 @@ public class Firefighter {
 	// Local variables initialization
 	private boolean newInfo; // Flag if the firefighter has a new info to communicate to peers
 	private Knowledge knowledge; // A knowledge the firefighter has
+	private Knowledge newknowledge;
 	ISchedulableAction stepSchedule; // Action scheduled for the step method
 	ISchedulableAction removeSchedule; // Action scheduled for the remove method
 	int id; // An ID of the firefighter
@@ -93,6 +94,7 @@ public class Firefighter {
 		velocity = new Velocity(RandomHelper.nextDoubleFromTo(initialSpeed - initialSpeedDeviation,
 				initialSpeed + initialSpeedDeviation), RandomHelper.nextDoubleFromTo(0, 360));
 		knowledge = new Knowledge(this.context); // No knowledge yet
+		newknowledge = new Knowledge(this.context);
 		newInfo = false; // No new info yet
 		// Schedule methods
 		ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
@@ -155,15 +157,18 @@ public class Firefighter {
 		} else {
 			moveOrExtinguish(); // includes moving to task location
 		}
+		// Update own location
 		myPos = grid.getLocation(this);
+		// Add myself into my knowledge in case I haven't done that before
 		knowledge.addFirefighter(myPos, id);
+
 		// Communication part (takes no time)
 
 		// split the follower in follower within the radio distance and the other ones.
 		ArrayList<GridPoint> radioFollower = new ArrayList<>();
 		ArrayList<GridPoint> satFollower = new ArrayList<>();
 		HashMap<Integer, GridPoint> followers = knowledge.getAllFirefighters();
-		// dont send message to himself
+		// don't send message to himself
 		followers.remove(id);
 		// distribute all followers in the one which are in the radio range and they who
 		// a re not
@@ -214,8 +219,9 @@ public class Firefighter {
 					sendMessage(leaderMethod, leaderloc, MessageType.ALL);
 				}
 			} else
-				// Send leader what I can see if he hasn't changed
-				sendMessage(leaderMethod, leaderloc, MessageType.ISEE);
+			// Send leader what I can see if he hasn't changed and if I see new things
+			if (newInfo)
+				sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
 
 		} else if (role == Role.Leader) {
 			// Send each follower specific task
@@ -236,6 +242,9 @@ public class Firefighter {
 				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
 			}
 		}
+
+		// Set newknowledge to zero
+		newknowledge = new Knowledge(this.context);
 	}
 
 	/**
@@ -530,7 +539,11 @@ public class Firefighter {
 		boolean hasForest = (Tools.getObjectOfTypeAt(grid, Forest.class, pos) != null);
 
 		if (hasFire) {
-			knowledge.addFire(pos);
+			if (knowledge.addFire(pos)) {
+				// If the fire is not yet in the knowledge, update leader about it
+				newknowledge.addFire(pos);
+				newInfo = true;
+			}
 		} else {
 			if (knowledge.getCurrentTask() != null && pos.equals(knowledge.getCurrentTask())) {
 				((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
@@ -544,12 +557,14 @@ public class Firefighter {
 			// Don't add him into your knowledge -> He will put his stuff into your
 			// knowledge anyway
 			sightedFirefighters.add(pos);
-			// knowledge.addFirefighter(pos);
 		} else {
-			// knowledge.removeFirefighter(pos);
 		}
 		if (!hasForest) {
-			knowledge.addBurnedForest(pos);
+			if (knowledge.addBurnedForest(pos)) {
+				// if burned forest is not yet in the knowledge, update leader about it
+				newknowledge.addBurnedForest(pos);
+				newInfo = true;
+			}
 		}
 		newInfo = true;
 	}
@@ -575,7 +590,12 @@ public class Firefighter {
 		case ALL:
 			message.setContent(this.knowledge.convert2String());
 			break;
+		case ISEENEW:
+			// Update leader only with stuff that is new!
+			message.setContent(this.newknowledge.WhatIsee2String(myPos, sightRange));
+			break;
 		case ISEE:
+			// Update leader only with stuff that is new!
 			message.setContent(this.knowledge.WhatIsee2String(myPos, sightRange));
 			break;
 		case LEADER:
