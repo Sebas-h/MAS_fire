@@ -114,7 +114,6 @@ public class Firefighter {
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
 
-		
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
 		// increases a score for each known fire by 1
@@ -136,10 +135,8 @@ public class Firefighter {
 		// Check if firefighter is leader, follower or alone
 		assignRole();
 
-		
 		// Action part (takes one step)
 		boolean checkWeather = false;
-		boolean leaderMoved = false;
 		if (role == Role.Leader) {
 			// checkWeather = RandomHelper.nextDouble() < 0.5;
 			checkWeather = true;
@@ -147,7 +144,6 @@ public class Firefighter {
 
 		if (knowledge.getFire(myPos) > 0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
-			leaderMoved = true;
 		} else if (checkWeather) {
 			Velocity oldWindVelocity = knowledge.getWindVelocity();
 			checkWeather();
@@ -195,51 +191,33 @@ public class Firefighter {
 
 		// Communicating to Follower and Leader
 		if (role == Role.Follower) {
-			// TODO: Only send things, if anything has changed
+			ArrayList<GridPoint> oldleaderloc = new ArrayList<GridPoint>(
+					Arrays.asList(knowledge.getFirefighter(oldleader)));
+			ArrayList<GridPoint> leaderloc = new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader)));
 			// If there is a leader change:
 			if (oldleader != leader) {
 				// Update all the firefighters in my knowledge, that there is a new leader
-				sendMessage(TransmissionMethod.Satellite,
-						new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()), MessageType.LEADER);
+				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.LEADER);
+				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.LEADER);
 				// If I had a different old leader
 				if (oldleader != this.id) {
 					// Update old leader what I can see in case he informs the actual leader after
 					// me which can lead to wrong knowledge in the new leader
-					sendMessage(oldleaderMethod,
-							new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(oldleader))),
-							MessageType.ISEE);
-					// Update new leader to inform old leader
-					sendMessage(leaderMethod, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
-							MessageType.OLDLEADER);
+					sendMessage(oldleaderMethod, oldleaderloc, MessageType.ISEE);
+					// Update new leader that there was an old leader
+					sendMessage(leaderMethod, leaderloc, MessageType.OLDLEADER);
 					// Send leader what I can see
-					// TODO: Only send stuff that changed
-					sendMessage(leaderMethod, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
-							MessageType.ISEE);
-				} else if (oldleader == this.id) {
-					// in case the fire fighter was degraded from leader to follower, he has to send
+					sendMessage(leaderMethod, leaderloc, MessageType.ISEE);
+				} else if (oldleader == this.id && iWasLeader) {
+					// in case the firefighter was degraded from leader to follower, he has to send
 					// the new leader all the information
-					if (iWasLeader)
-						sendMessage(leaderMethod,
-								new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
-								MessageType.ALL);
-					// in case I was alone before, just send leader what I see, to not feed him with
-					// false information
-					else {
-						sendMessage(leaderMethod,
-								new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
-								MessageType.ISEE);
-					}
+					sendMessage(leaderMethod, leaderloc, MessageType.ALL);
 				}
-				// Send leader what I can see if he hasn't changed
 			} else
-				// TODO: Only send stuff that changed
-				sendMessage(leaderMethod, new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader))),
-						MessageType.ISEE);
+				// Send leader what I can see if he hasn't changed
+				sendMessage(leaderMethod, leaderloc, MessageType.ISEE);
 
 		} else if (role == Role.Leader) {
-			// Don't send message to myself
-			// TODO Send followers wind information in case of change
-
 			// Send each follower specific task
 			for (int followerID : followers.keySet()) {
 				TaskToGive = evaluate(followerID);
@@ -254,63 +232,67 @@ public class Firefighter {
 			}
 			// Send wind update
 			if (windUpdate) {
-
 				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
 				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
 			}
 		}
 	}
-	
+
 	/**
-	 * Executes task; either moving closer to task destination 
-	 * or extinguishing fire at task destination
-	 * @param taskDestination gridpoint of task destination
+	 * Executes task; either moving closer to task destination or extinguishing fire
+	 * at task destination
+	 * 
+	 * @param taskDestination
+	 *            gridpoint of task destination
 	 */
 	private void executeTask(GridPoint taskDestination) {
 		GridPoint myPos = grid.getLocation(this);
 		double angleToTask = Tools.getAngle(myPos, taskDestination);
 		double distanceToTask = Tools.getDistance(myPos, taskDestination);
-		
+
 		// One grid cell away from task destination (i.e. the fire to be extinguished)
 		if (distanceToTask == 1) {
 			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
 			// Extinguish the fire in the direction of heading:
 			if (taskDestination.equals(sightPos)) {
 				extinguishFire(angleToTask);
-			} 
+			}
 			// Turn to fire:
 			else {
 				velocity.direction = angleToTask;
 			}
-		}
-		else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) {
+		} else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) {
 			// try +45 degrees and -45 degrees
 			// which ever one gets me to within 1 distance of the task
 			// is the angle I will choose to move with
 			double angleToMove = angleToTask;
-			if(Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove + 45.0, myPos)) == 1)
+			if (Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove + 45.0, myPos)) == 1)
 				angleToMove += 45.0;
-			else if(Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove - 45.0, myPos)) == 1)
+			else if (Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove - 45.0, myPos)) == 1)
 				angleToMove -= 45.0;
 			tryToMove(angleToMove);
 		}
 		// Move toward the task destination:
 		else {
-			tryToMove(angleToTask);	
+			tryToMove(angleToTask);
 		}
 	}
-	
+
 	/**
-	 * Checks if the is a firefighter on the next square
-	 * given a grid point and direction to go in.
-	 * @param point Current grid point
-	 * @param direction Direction to head in
+	 * Checks if the is a firefighter on the next square given a grid point and
+	 * direction to go in.
+	 * 
+	 * @param point
+	 *            Current grid point
+	 * @param direction
+	 *            Direction to head in
 	 * @return Boolean
 	 */
 	private boolean nextSquareOccupied(GridPoint point, double direction) {
 		GridPoint nextPoint = Tools.dirToCoord(direction, point);
 		for (GridPoint p : knowledge.getAllFirefighters().values()) {
-			if (p.equals(nextPoint)) return true;
+			if (p.equals(nextPoint))
+				return true;
 		}
 		return false;
 	}
@@ -324,11 +306,9 @@ public class Firefighter {
 
 		if (knowledge.getCurrentTask() != null) {
 			executeTask(knowledge.getCurrentTask());
-		}
-		else if (distance > 1) { // If fire is more than extinguishingDistance away
+		} else if (distance > 1) { // If fire is more than extinguishingDistance away
 			tryToMove(directionToFire);
-		} 
-		else { // Otherwise explore randomly
+		} else { // Otherwise explore randomly
 			velocity.direction = RandomHelper.nextDoubleFromTo(0, 360);
 			tryToMove(velocity.direction);
 		}
@@ -568,11 +548,8 @@ public class Firefighter {
 		} else {
 			// knowledge.removeFirefighter(pos);
 		}
-
-		if (hasForest) {
-			knowledge.addForest(pos);
-		} else {
-			knowledge.removeForest(pos);
+		if (!hasForest) {
+			knowledge.addBurnedForest(pos);
 		}
 		newInfo = true;
 	}
@@ -720,8 +697,8 @@ public class Firefighter {
 				int tempvalue = 0;
 				int dist = Tools.getDistance(Pos, p);
 				int fire = knowledge.getFire(p);
-				if (fire ==0 ) {
-					//no fire -> not a good position
+				if (fire == 0) {
+					// no fire -> not a good position
 					continue;
 				}
 				tempvalue = tempvalue - dist - fire;
@@ -740,13 +717,13 @@ public class Firefighter {
 				double directionfire = Tools.getAngle(p, Pos);
 				// distancefactor the farer the goal is away the less necessary is the wind for
 				// the values
-				int distancefactor = 360 / (8 * dist+1);
+				int distancefactor = 360 / (8 * dist + 1);
 				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
 					tempvalue = tempvalue - dist;
 				}
 				// currenttask is preferred
-				if (currenttask == p ) {
-					tempvalue = tempvalue +2;
+				if (currenttask == p) {
+					tempvalue = tempvalue + 2;
 				}
 
 				// if gridpoint is surrounded by fire it is not reachable
@@ -775,7 +752,7 @@ public class Firefighter {
 				}
 			}
 		}
-		if(highscore==null) {
+		if (highscore == null) {
 			return grid.getLocation(this);
 		}
 		return highscore;

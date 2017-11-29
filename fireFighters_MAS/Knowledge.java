@@ -30,7 +30,7 @@ public class Knowledge {
 																	// firefighter presence in the knowledge
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge; // A hash with locations, and corresponding flags of rain
 																// presence in the knowledge
-	private LinkedHashMap<Integer,GridPoint> givenTasks;
+	private LinkedHashMap<Integer, GridPoint> givenTasks;
 	// private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's
 	// of my friends
 	private Velocity windVelocity; // A knowledge about the wind velocity
@@ -38,7 +38,6 @@ public class Knowledge {
 	private GridPoint currentTask;
 	private int radioDistance;
 	private GridPoint radioDistPosition;
-	
 
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
@@ -47,7 +46,7 @@ public class Knowledge {
 		this.forestKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
-		this.givenTasks = new LinkedHashMap<Integer,GridPoint>();
+		this.givenTasks = new LinkedHashMap<Integer, GridPoint>();
 		this.windVelocity = null;
 		this.context = context;
 	}
@@ -55,10 +54,11 @@ public class Knowledge {
 	public GridPoint getCurrentTask() {
 		return this.currentTask;
 	}
+
 	public void setCurrentTask(GridPoint currentTask) {
 		this.currentTask = currentTask;
 	}
-	
+
 	public int getRadioDistance() {
 		return radioDistance;
 	}
@@ -66,6 +66,7 @@ public class Knowledge {
 	public void setRadioDistance(int radioDistance) {
 		this.radioDistance = radioDistance;
 	}
+
 	public GridPoint getRadioDistPosition() {
 		return radioDistPosition;
 	}
@@ -84,7 +85,7 @@ public class Knowledge {
 
 		if (fireKnowledge != null) {
 			for (GridPoint p : fireKnowledge.keySet()) {
-				if (fireKnowledge.get(p) != null ||fireKnowledge.get(p) != 0) {
+				if (fireKnowledge.get(p) != null || fireKnowledge.get(p) != 0) {
 					returnArray.add(p);
 				}
 			}
@@ -149,10 +150,10 @@ public class Knowledge {
 
 		return returnArray;
 	}
-	
-	//overloading this method may not be neccesarry
+
+	// overloading this method may not be neccesarry
 	public boolean addFire(GridPoint pos) {
-	 return addFire(pos,0);
+		return addFire(pos, 0);
 	}
 
 	/**
@@ -165,7 +166,7 @@ public class Knowledge {
 	 */
 	public boolean addFire(GridPoint pos, int dur) {
 		for (GridPoint p : fireKnowledge.keySet()) {
-			//allready knows fire
+			// allready knows fire
 			if (pos.equals(p)) {
 				return false;
 			}
@@ -203,6 +204,52 @@ public class Knowledge {
 	}
 
 	/**
+	 * Add the information that there is no more forest on a gridpoint
+	 * 
+	 * @param pos
+	 *            -position of the empty gridpoint
+	 */
+	public void addBurnedForest(GridPoint pos) {
+		forestKnowledge.put(pos, false);
+	}
+
+	/**
+	 * Looks if burnedForest information is in knowledge
+	 * 
+	 * @param Gridpoint
+	 *            of the information
+	 * @return true if there is no forest false if it is not in the knowledge or the
+	 *         tree lives in the knowledge
+	 */
+	public boolean getBurnedForest(GridPoint pos) {
+		for (GridPoint p : forestKnowledge.keySet()) {
+			if (p.equals(pos) && !forestKnowledge.get(p))
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Looks through all entries in forestknowledge to get already burned down
+	 * forest points
+	 * 
+	 * @return all gridpoint in own forest knowledge, that have value false
+	 */
+	public ArrayList<GridPoint> getAllBurnedForest() {
+		ArrayList<GridPoint> returnArray = new ArrayList<>();
+
+		if (forestKnowledge != null) {
+			for (GridPoint p : forestKnowledge.keySet()) {
+				if (!forestKnowledge.get(p)) {
+					returnArray.add(p);
+				}
+			}
+		}
+
+		return returnArray;
+	}
+
+	/**
 	 * Add a firefighter object to a given position in a current knowledge
 	 * 
 	 * @param pos
@@ -221,6 +268,7 @@ public class Knowledge {
 		firefighterKnowledge.put(ID, pos);
 		return true;
 	}
+
 	public boolean addTask(Integer ID, GridPoint pos) {
 		for (Integer id : givenTasks.keySet()) {
 			if (id.equals(ID)) {
@@ -231,6 +279,7 @@ public class Knowledge {
 		givenTasks.put(ID, pos);
 		return true;
 	}
+
 	public GridPoint getTask(Integer ID) {
 		for (Integer id : givenTasks.keySet()) {
 			if (id.equals(ID)) {
@@ -332,11 +381,11 @@ public class Knowledge {
 			}
 		}
 	}
-	
+
 	public void increaseFireScore() {
 		for (GridPoint p : fireKnowledge.keySet()) {
-			if(fireKnowledge.get(p)!=0) {
-				fireKnowledge.replace(p, fireKnowledge.get(p)+1);
+			if (fireKnowledge.get(p) != 0) {
+				fireKnowledge.replace(p, fireKnowledge.get(p) + 1);
 			}
 		}
 	}
@@ -355,7 +404,7 @@ public class Knowledge {
 			}
 		}
 	}
-	
+
 	public void removeAllRain() {
 		for (GridPoint p : rainKnowledge.keySet()) {
 			removeRain(p);
@@ -375,8 +424,8 @@ public class Knowledge {
 			str += "Fire " + pos.getX() + " " + pos.getY() + ";";
 		}
 		for (Map.Entry<Integer, GridPoint> entry : firefighterKnowledge.entrySet()) {
-			// str += "Firefighters " + entry.getValue().getX() + " " +
-			// entry.getValue().getY() + " " + entry.getKey()+";";
+			str += "Firefighters " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey()
+					+ ";";
 		}
 		return str;
 	}
@@ -393,10 +442,16 @@ public class Knowledge {
 				str += "Fire " + pos.getX() + " " + pos.getY() + ";";
 			}
 		}
-		for (Map.Entry<Integer, GridPoint> entry : firefighterKnowledge.entrySet()) {
-			GridPoint pos = entry.getValue();
+		// for (Map.Entry<Integer, GridPoint> entry : firefighterKnowledge.entrySet()) {
+		// GridPoint pos = entry.getValue();
+		// if (canBeSeen(myPos, pos, sightRange)) {
+		// str += "Firefighters " + pos.getX() + " " + pos.getY() + " " + entry.getKey()
+		// + ";";
+		// }
+		// }
+		for (GridPoint pos : getAllBurnedForest()) {
 			if (canBeSeen(myPos, pos, sightRange)) {
-				str += "Firefighters " + pos.getX() + " " + pos.getY() + " " + entry.getKey() + ";";
+				str += "No Forest " + pos.getX() + " " + pos.getY() + ";";
 			}
 		}
 		return str;
@@ -427,13 +482,12 @@ public class Knowledge {
 		for (int i = 0; i < arr1.length; i++) {
 			String[] arr2 = arr1[i].split(" ");
 			if (arr2[0].equals("Fire")) {
-				//TODO maybe add the current duration the fire is allready known
 				addFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 			}
-			// if (arr2[0].equals("Rain")) { addRain(new
-			// GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
-			// if (arr2[0].equals("Forest")) { addForest(new
-			// GridPoint(Integer.parseInt(arr2[1]),Integer.parseInt(arr2[2]))); }
+			if (arr2[0].equals("No Forest")) {
+				removeFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
+				addBurnedForest(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
+			}
 			if (arr2[0].equals("Firefighters")) {
 				addFirefighter(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])),
 						Integer.parseInt(arr2[3]));
@@ -446,10 +500,10 @@ public class Knowledge {
 			if (arr2[0].equals("Dead Firefighter")) {
 				removeFirefighter(Integer.parseInt(arr2[1]));
 			}
-			
+
 			if (arr2[0].equals("Task")) {
 				setCurrentTask(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
-				//increment the counter for the received and accepted tasks:
+				// increment the counter for the received and accepted tasks:
 				((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).incrementCounter();
 				((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).incrementCounter();
 			}
@@ -469,7 +523,8 @@ public class Knowledge {
 		for (GridPoint pos : k.getAllFire()) {
 			addFire(pos, k.getFire(pos));
 			// Increment successful knowledge update about fire:
-			//((IGlobalCounter) context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
+			// ((IGlobalCounter)
+			// context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
 		for (GridPoint pos : k.getAllForest()) {
 			addForest(pos);
@@ -482,16 +537,15 @@ public class Knowledge {
 		for (GridPoint pos : k.getAllRain()) {
 			addRain(pos);
 		}
-		if(k.getCurrentTask()!=null) {
+		if (k.getCurrentTask() != null) {
 			setCurrentTask(k.getCurrentTask());
 		}
-		
+
 	}
 
 	// Local getters
 	/**
-	 * gets the duration the fire is already known
-	 * ==0 if no fire 
+	 * gets the duration the fire is already known ==0 if no fire
 	 * 
 	 * @param p
 	 *            - a cell to check
@@ -527,13 +581,11 @@ public class Knowledge {
 	 *            - a cell to check
 	 * @return 1 if the object exists in the knowledge, 0 - if not
 	 */
-	/*public boolean getFirefighter(int id) {
-		if (firefighterKnowledge.get(id) == null) {
-			return false;
-		}
-		return true;
-		// return firefighterKnowledge.values(id);
-	}*/
+	/*
+	 * public boolean getFirefighter(int id) { if (firefighterKnowledge.get(id) ==
+	 * null) { return false; } return true; // return
+	 * firefighterKnowledge.values(id); }
+	 */
 
 	public GridPoint getFirefighter(int id) {
 		return firefighterKnowledge.get(id);
@@ -562,7 +614,6 @@ public class Knowledge {
 	public Velocity getWindVelocity() {
 		return windVelocity;
 	}
-	
 
 	// Local setters
 	/**
