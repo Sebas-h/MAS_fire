@@ -264,15 +264,18 @@ public class Firefighter {
 			GridPoint sightPos = Tools.dirToCoord(velocity.direction, myPos);
 			// Extinguish the fire in the direction of heading:
 			if (taskDestination.equals(sightPos)) {
+				ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
+				System.out.println("Tries to extinguish fire, at tick: " + schedule.getTickCount());
+				System.out.println("My pos: " + myPos);
+				System.out.println("Dest pos: " + taskDestination + '\n');
 				extinguishFire(angleToTask);
 			}
 			// Turn to fire:
 			else {
 				velocity.direction = angleToTask;
 			}
-		} else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) {
-			// try +45 degrees and -45 degrees
-			// which ever one gets me to within 1 distance of the task
+		} else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) { // avoid blocking each other
+			// try +45 degrees and -45 degrees which ever one gets me to within 1 distance of the task
 			// is the angle I will choose to move with
 			double angleToMove = angleToTask;
 			if (Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove + 45.0, myPos)) == 1)
