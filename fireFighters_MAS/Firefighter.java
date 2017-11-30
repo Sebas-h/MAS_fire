@@ -412,7 +412,7 @@ public class Firefighter {
 		sightedFirefighters = new ArrayList<>();
 		for (int i = -sightRange; i <= sightRange; i++) {
 			for (int j = -sightRange; j <= sightRange; j++) {
-				if (i != 0 && j != 0)
+				if (i != 0 || j != 0)
 					checkCell(new GridPoint(myPos.getX() + i, myPos.getY() + j));
 			}
 		}
