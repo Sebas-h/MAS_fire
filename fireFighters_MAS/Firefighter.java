@@ -702,78 +702,104 @@ public class Firefighter {
 	 */
 	private GridPoint evaluate(int id) {
 
+		//TODO add a border if the fire is known for more than x it does not make sense to move there
+		//TODO take positions of the other firefighters into account so they spread around the grid
+		//TODO if a firefighter of the same team is in radio range of this gridpoint this point is preferred
+		//TODO only update exploration task if there is a new fire 
+		
+		
 		// Get access to the user accessible parameters
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		int gridXsize = params.getInteger("gridWidth");
 		int gridYsize = params.getInteger("gridHeight");
-		// int lifetimefire = params.getInteger();
-		// int lifetimeforest = params.getInteger();
+		sightRange = params.getInteger("firefighter_sight_range");
 		int maxvalue = Integer.MIN_VALUE;
 		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
 		GridPoint currenttask = knowledge.getCurrentTask();
-
-		for (int x = 1; x <= gridXsize; x++) {
-			for (int y = 1; y <= gridYsize; y++) {
-				GridPoint p = new GridPoint(x, y);
-				// evaluate the value of this gridpoint
-				int tempvalue = 0;
-				int dist = Tools.getDistance(Pos, p);
-				int fire = knowledge.getFire(p);
-				if (fire == 0) {
-					// no fire -> not a good position
-					continue;
-				}
-				tempvalue = tempvalue - dist - fire;
-				for (int tmpID : knowledge.getAllFirefighters().keySet()) {
-					if (knowledge.getTask(tmpID) != null && knowledge.getTask(tmpID).equals(p)) {
-						// TODO how big is this factor?+ only once;change value if already a few
-						// firefighters?
-						tempvalue += 4;
-						break;
-					}
-				}
-				// check if the wind comes from the direction (its better to go into the same
-				// direction as the wind)
-				Velocity wind = knowledge.getWindVelocity();
-				double direction = wind.direction;
-				double directionfire = Tools.getAngle(p, Pos);
-				// distancefactor the farer the goal is away the less necessary is the wind for
-				// the values
-				int distancefactor = 360 / (8 * dist + 1);
-				if (directionfire - distancefactor < direction && directionfire + distancefactor > direction) {
-					tempvalue = tempvalue - dist;
-				}
-				// currenttask is preferred
-				if (currenttask == p) {
-					tempvalue = tempvalue + 2;
-				}
-
-				// if gridpoint is surrounded by fire it is not reachable
-				boolean check = true;
-				for (int i = -1; i <= 1; i++) {
-					for (int j = -1; j <= 1; j++) {
-						if (!(i == 0 && j == 0)) // Do not check the point at which standing
-						{
-							GridPoint surround = new GridPoint(x + i, y + j);
-
-							if (knowledge.getFire(surround) == 0) {
-								check = false;
-							}
-						}
-					}
-				}
-				if (check) {
-					tempvalue = Integer.MIN_VALUE;
-				}
-
-				// check if value > maxvalue --> value = maxvalue --> highscoregridpoint =
-				// gridpoint pos
+		
+		/*
+		 * Go through all fire gridpoints 
+		 * 	check lifetime
+		 * 	check distance
+		 * 	if lifetime + distance > 10????? 
+		 * 		not reachable
+		 * 		continue
+		 * 	Else
+		 * 		Gridpoint is goal
+		 * If no goal found 
+		 * 	search for a point where i have space (no other firefighters)
+		 * 	(Take tasks of the other firefightes into account
+		 * 	If other firefightes have no task take their current position into account)
+		 * 
+		 */
+		
+		for (GridPoint p : knowledge.getAllFire()) {
+			int tempvalue = 0;
+			int dist = Tools.getDistance(Pos, p);
+			int fire = knowledge.getFire(p);
+			//Check if surrounded by fire is not necessary because in this case there is allways a fire that is nearer
+			tempvalue = tempvalue - dist - fire +10 ;
+			//Wind should only have influence if two fires got the same value
+			if (tempvalue > 0) {
 				if (tempvalue > maxvalue) {
 					maxvalue = tempvalue;
 					highscore = p;
 				}
+				if (tempvalue = maxvalue) { //take wind into account
+					Velocity wind = knowledge.getWindVelocity();
+					double direction = wind.direction;
+					double directionfirea = Tools.getAngle(p, Pos);
+					double directionfireb = Tools.getAngel(highscore, Pos);
+					// decide which fire is better because the direction is not the wind direction
+					if (Math.abs(direction - directionfirea) > Math.abs(direction - directionfireb)) {
+						highscore = p;
+					}
+				}
 			}
+		}
+		//If no fire was found firefighter should explore
+		//Firefighters should spread out such that they cover as many fields as possible for observation and have as less fields as possible shared
+		if (highscore == null) {
+		for (int x = 1; x <= gridXsize; x++) {
+			for (int y = 1; y <= gridYsize; y++) {
+				GridPoint p = new GridPoint(x, y);
+				boolean valid = false;
+				//search for all grid points that have a distance of 2 times of how far they can see to the other firefighters or their tasks
+				//for every firefighter
+					//if has task
+						//check if girdpoint is 2times sightrange away if so mark boolean as true if not continue 
+					//else
+						//check if gridpoint is 2 times sightrange away from current position if not continue (biger for loop)
+				
+				for (int tmpID : knowledge.getAllFirefighters().keySet()) {
+					//first check for the current task
+					if(knowledge.getTask(tmpID) != null) {
+						GridPoint q = knowledge.getTask(tmpID);
+						int dist = Tools.getDistance(p,q);
+						if (dist == 2 * sightRange) {
+							valid = true;
+						}
+					}
+					else { //check for the current position
+						GridPoint q = knowledge.getFirefighter(tmpID);
+						int dist = Tools.getDistance(p,q);
+						if (dist == 2 * sightRange)
+							valid = true;
+					}
+				}
+				
+				if (vaild) {
+					int dist = Tools.getDistance(Pos, p);
+					int tempvalue = -dist;
+					if (tempvalue > maxvalue) {
+						maxvalue = tempvalue;
+						highscore = p;
+					}
+				}
+				
+			}
+		}
 		}
 		if (highscore == null) {
 			return grid.getLocation(this);
