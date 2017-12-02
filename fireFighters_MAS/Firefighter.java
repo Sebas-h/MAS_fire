@@ -789,7 +789,7 @@ public class Firefighter {
 					}
 				}
 				
-				if (vaild == true) {
+				if (valid == true) {
 					int dist = Tools.getDistance(Pos, p);
 					int tempvalue = -dist;
 					if (tempvalue > maxvalue) {
