@@ -200,4 +200,10 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 		int taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
 		return (int) Math.round((taskaccepted / tasknum)*100);
 	}
+	
+	public int getTotalbountyEarned() {
+		Parameters params = RunEnvironment.getInstance().getParameters();
+		int bounty = params.getInteger("firefighter_fire_reward_bounty");
+		return bounty*((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter();
+	}
 }

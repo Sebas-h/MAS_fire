@@ -45,6 +45,8 @@ public class Firefighter {
 	private int sightRange; // Number of cells defining how far the firefighter can see around
 	private int bounty; // Bounty units the firefighter has
 	private int tasksSent;
+	private int bountySpent;
+	private int bountyTransferred;
 	// Local variables initialization
 	private boolean newInfo; // Flag if the firefighter has a new info to communicate to peers
 	private Knowledge knowledge; // A knowledge the firefighter has
@@ -83,6 +85,8 @@ public class Firefighter {
 		this.id = id;
 		this.role = Role.Alone;
 		tasksSent = 0;
+		bountySpent=0;
+		bountyTransferred=0;
 		iWasLeader = false;
 		oldleader = id;
 		leader = id;
@@ -652,6 +656,7 @@ public class Firefighter {
 					if (getBounty() >= messageCost) {
 						recipient.recieveMessage(message); // Deliver message
 						// bounty -= messageCost; // Pay for the message
+						bountySpent+=messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
@@ -665,6 +670,7 @@ public class Firefighter {
 						recipient.recieveMessage(message); // Deliver message
 
 						// bounty -= globalMessageCost; // Pay for the message
+						bountySpent+=messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
 								.addMessage(message.getContent());
@@ -939,6 +945,14 @@ public class Firefighter {
 	 */
 	public int getTasksSent() {
 		return tasksSent;
+	}
+	
+	public int getBountySpent() {
+		return bountySpent;
+	}
+	
+	public int getBountyTransferred() {
+		return bountyTransferred;
 	}
 
 	/**
