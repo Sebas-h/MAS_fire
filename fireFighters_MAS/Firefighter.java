@@ -746,11 +746,11 @@ public class Firefighter {
 					maxvalue = tempvalue;
 					highscore = p;
 				}
-				if (tempvalue = maxvalue) { //take wind into account
+				if (tempvalue == maxvalue) { //take wind into account
 					Velocity wind = knowledge.getWindVelocity();
 					double direction = wind.direction;
 					double directionfirea = Tools.getAngle(p, Pos);
-					double directionfireb = Tools.getAngel(highscore, Pos);
+					double directionfireb = Tools.getAngle(highscore, Pos);
 					// decide which fire is better because the direction is not the wind direction
 					if (Math.abs(direction - directionfirea) > Math.abs(direction - directionfireb)) {
 						highscore = p;
@@ -789,7 +789,7 @@ public class Firefighter {
 					}
 				}
 				
-				if (vaild) {
+				if (vaild == true) {
 					int dist = Tools.getDistance(Pos, p);
 					int tempvalue = -dist;
 					if (tempvalue > maxvalue) {
