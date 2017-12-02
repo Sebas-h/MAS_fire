@@ -428,11 +428,10 @@ public class Knowledge {
 		String str = "";
 
 		for (GridPoint pos : getAllFire()) {
-			str += "Fire " + pos.getX() + " " + pos.getY() + ";";
+			str += "F " + pos.getX() + " " + pos.getY() + ";";
 		}
 		for (Map.Entry<Integer, GridPoint> entry : firefighterKnowledge.entrySet()) {
-			str += "Firefighters " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey()
-					+ ";";
+			str += "FF " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey() + ";";
 		}
 		return str;
 	}
@@ -446,7 +445,7 @@ public class Knowledge {
 		String str = "";
 		for (GridPoint pos : getAllFire()) {
 			if (canBeSeen(myPos, pos, sightRange)) {
-				str += "Fire " + pos.getX() + " " + pos.getY() + ";";
+				str += " " + pos.getX() + " " + pos.getY() + ";";
 			}
 		}
 		// for (Map.Entry<Integer, GridPoint> entry : firefighterKnowledge.entrySet()) {
@@ -458,7 +457,7 @@ public class Knowledge {
 		// }
 		for (GridPoint pos : getAllBurnedForest()) {
 			if (canBeSeen(myPos, pos, sightRange)) {
-				str += "No Forest " + pos.getX() + " " + pos.getY() + ";";
+				str += "NF " + pos.getX() + " " + pos.getY() + ";";
 			}
 		}
 		return str;
@@ -483,19 +482,18 @@ public class Knowledge {
 	 *            - a string representation of knowledge
 	 */
 	public void convertFromString(String str) {
-		// TODO Parse the string to extract the knowledge - Add own code
 		String[] arr1 = str.split(";");
 
 		for (int i = 0; i < arr1.length; i++) {
 			String[] arr2 = arr1[i].split(" ");
-			if (arr2[0].equals("Fire")) {
+			if (arr2[0].equals("F")) {
 				addFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 			}
-			if (arr2[0].equals("No Forest")) {
+			if (arr2[0].equals("NF")) {
 				removeFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 				addBurnedForest(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 			}
-			if (arr2[0].equals("Firefighters")) {
+			if (arr2[0].equals("FF")) {
 				addFirefighter(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])),
 						Integer.parseInt(arr2[3]));
 			}
@@ -504,17 +502,17 @@ public class Knowledge {
 				addFirefighter(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])),
 						Integer.parseInt(arr2[3]));
 			}
-			if (arr2[0].equals("Dead Firefighter")) {
+			if (arr2[0].equals("DF")) {
 				removeFirefighter(Integer.parseInt(arr2[1]));
 			}
 
-			if (arr2[0].equals("Task")) {
+			if (arr2[0].equals("T")) {
 				setCurrentTask(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 				// increment the counter for the received and accepted tasks:
 				((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).incrementCounter();
 				((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).incrementCounter();
 			}
-			if (arr2[0].equals("Wind")) {
+			if (arr2[0].equals("W")) {
 				windVelocity = new Velocity(Double.parseDouble(arr2[1]), Double.parseDouble(arr2[1]));
 			}
 		}

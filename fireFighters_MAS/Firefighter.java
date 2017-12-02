@@ -53,12 +53,14 @@ public class Firefighter {
 	ISchedulableAction removeSchedule; // Action scheduled for the remove method
 	int id; // An ID of the firefighter
 	private ArrayList<GridPoint> sightedFirefighters;
+	private ArrayList<GridPoint> sightedFirefightersLastStep;
 	Role role; // The character of the firefighter defining its behavior //TODO This should be
 				// implemented
 	boolean iWasLeader;
 	int radioDist;
 	GridPoint TaskToGive;
 	boolean windUpdate = false;
+	boolean moved = false;
 
 	Integer leader;
 	Integer oldleader;
@@ -179,12 +181,9 @@ public class Firefighter {
 				satFollower.add(gridPoint);
 			}
 		}
-		// TODO: Everyone thinks forest is evrwhere and only send dead forest
-		// TODO: Maybe leave group if I have no more bounty?
 
-		// Handwaving to everyone in my sight
-		// TODO: Don't send him this message if I already informed my leader about him
-		sendMessage(TransmissionMethod.Radio, sightedFirefighters, MessageType.LEADER);
+		// Handwaving to everyone in my sight that is new!
+		sendMessage(TransmissionMethod.Radio, computeNewSeenFirefighters(), MessageType.LEADER);
 
 		// Distinguish between people in my radio sight and people who are not
 		TransmissionMethod leaderMethod = (Tools.getDistance(grid.getLocation(this),
@@ -213,25 +212,32 @@ public class Firefighter {
 					sendMessage(leaderMethod, leaderloc, MessageType.OLDLEADER);
 					// Send leader what I can see
 					sendMessage(leaderMethod, leaderloc, MessageType.ISEE);
-				} else if (oldleader == this.id && iWasLeader) {
+				} else if (oldleader == this.id) {
 					// in case the firefighter was degraded from leader to follower, he has to send
 					// the new leader all the information
-					sendMessage(leaderMethod, leaderloc, MessageType.ALL);
+					if (iWasLeader)
+						sendMessage(leaderMethod, leaderloc, MessageType.ALL);
+					else
+						sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
 				}
 			} else
 			// Send leader what I can see if he hasn't changed and if I see new things
 			if (newInfo)
 				sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
+			if (moved)
+				sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
 
 		} else if (role == Role.Leader) {
-			// Send each follower specific task
+			// Send each follower specific task and my position in case I moved
 			for (int followerID : followers.keySet()) {
-				TaskToGive = evaluate(followerID);
 				GridPoint destination = followers.get(followerID);
+				ArrayList<GridPoint> destinationList = new ArrayList<GridPoint>(Arrays.asList(destination));
+				if (moved)
+					sendMessage(getTransmissionMethode(destination), destinationList, MessageType.POSITION);
+				TaskToGive = evaluate(followerID);
 
 				if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
-					sendMessage(getTransmissionMethode(destination),
-							new ArrayList<GridPoint>(Arrays.asList(destination)), MessageType.TASK);
+					sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
 					knowledge.addTask(followerID, TaskToGive);
 					tasksSent++;
 				}
@@ -245,6 +251,8 @@ public class Firefighter {
 
 		// Set newknowledge to zero
 		newknowledge = new Knowledge(this.context);
+		// Update sighterFirefightersLastStep
+		sightedFirefightersLastStep = sightedFirefighters;
 	}
 
 	/**
@@ -265,9 +273,10 @@ public class Firefighter {
 			// Extinguish the fire in the direction of heading:
 			if (taskDestination.equals(sightPos)) {
 				ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
-				System.out.println("Tries to extinguish fire, at tick: " + schedule.getTickCount());
-				System.out.println("My pos: " + myPos);
-				System.out.println("Dest pos: " + taskDestination + '\n');
+				// System.out.println("Tries to extinguish fire, at tick: " +
+				// schedule.getTickCount());
+				// System.out.println("My pos: " + myPos);
+				// System.out.println("Dest pos: " + taskDestination + '\n');
 				extinguishFire(angleToTask);
 			}
 			// Turn to fire:
@@ -275,7 +284,8 @@ public class Firefighter {
 				velocity.direction = angleToTask;
 			}
 		} else if (distanceToTask == 2 && nextSquareOccupied(myPos, angleToTask)) { // avoid blocking each other
-			// try +45 degrees and -45 degrees which ever one gets me to within 1 distance of the task
+			// try +45 degrees and -45 degrees which ever one gets me to within 1 distance
+			// of the task
 			// is the angle I will choose to move with
 			double angleToMove = angleToTask;
 			if (Tools.getDistance(taskDestination, Tools.dirToCoord(angleToMove + 45.0, myPos)) == 1)
@@ -487,6 +497,7 @@ public class Firefighter {
 												// firefighter
 			{
 				grid.moveTo(this, newPos.toIntArray(null));
+				this.moved = true;
 				return 0;
 			} else if (hasFirefighter) {
 				return 1;
@@ -556,9 +567,7 @@ public class Firefighter {
 		}
 
 		if (hasFirefighter) {
-			// only send the new firefighter your ID and location
-			// Don't add him into your knowledge -> He will put his stuff into your
-			// knowledge anyway
+			// only send the new firefighter ID and location of your leader
 			sightedFirefighters.add(pos);
 		} else {
 		}
@@ -593,6 +602,10 @@ public class Firefighter {
 		case ALL:
 			message.setContent(this.knowledge.convert2String());
 			break;
+		case POSITION:
+			GridPoint position = this.grid.getLocation(this);
+			message.setContent("FF " + position.getX() + " " + position.getY() + " " + this.id + ";");
+			break;
 		case ISEENEW:
 			// Update leader only with stuff that is new!
 			message.setContent(this.newknowledge.WhatIsee2String(myPos, sightRange));
@@ -609,14 +622,14 @@ public class Firefighter {
 					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader + ";");
 			break;
 		case BYE:
-			message.setContent("Dead Firefighter " + id);
+			message.setContent("DF " + id);
 			break;
 		case TASK:
-			message.setContent("Task " + TaskToGive.getX() + " " + TaskToGive.getY() + ";");
+			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY() + ";");
 			break;
 		case WIND:
 			message.setContent(
-					"Wind " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction + ";");
+					"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction + ";");
 			break;
 		default:
 			break;
@@ -702,12 +715,14 @@ public class Firefighter {
 	 */
 	private GridPoint evaluate(int id) {
 
-		//TODO add a border if the fire is known for more than x it does not make sense to move there
-		//TODO take positions of the other firefighters into account so they spread around the grid
-		//TODO if a firefighter of the same team is in radio range of this gridpoint this point is preferred
-		//TODO only update exploration task if there is a new fire 
-		
-		
+		// TODO add a border if the fire is known for more than x it does not make sense
+		// to move there
+		// TODO take positions of the other firefighters into account so they spread
+		// around the grid
+		// TODO if a firefighter of the same team is in radio range of this gridpoint
+		// this point is preferred
+		// TODO only update exploration task if there is a new fire
+
 		// Get access to the user accessible parameters
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		int gridXsize = params.getInteger("gridWidth");
@@ -717,36 +732,30 @@ public class Firefighter {
 		GridPoint highscore = null;
 		GridPoint Pos = knowledge.getFirefighter(id);
 		GridPoint currenttask = knowledge.getCurrentTask();
-		
+
 		/*
-		 * Go through all fire gridpoints 
-		 * 	check lifetime
-		 * 	check distance
-		 * 	if lifetime + distance > 10????? 
-		 * 		not reachable
-		 * 		continue
-		 * 	Else
-		 * 		Gridpoint is goal
-		 * If no goal found 
-		 * 	search for a point where i have space (no other firefighters)
-		 * 	(Take tasks of the other firefightes into account
-		 * 	If other firefightes have no task take their current position into account)
+		 * Go through all fire gridpoints check lifetime check distance if lifetime +
+		 * distance > 10????? not reachable continue Else Gridpoint is goal If no goal
+		 * found search for a point where i have space (no other firefighters) (Take
+		 * tasks of the other firefightes into account If other firefightes have no task
+		 * take their current position into account)
 		 * 
 		 */
-		
+
 		for (GridPoint p : knowledge.getAllFire()) {
 			int tempvalue = 0;
 			int dist = Tools.getDistance(Pos, p);
 			int fire = knowledge.getFire(p);
-			//Check if surrounded by fire is not necessary because in this case there is allways a fire that is nearer
-			tempvalue = tempvalue - dist - fire +10 ;
-			//Wind should only have influence if two fires got the same value
+			// Check if surrounded by fire is not necessary because in this case there is
+			// allways a fire that is nearer
+			tempvalue = tempvalue - dist - fire + 10;
+			// Wind should only have influence if two fires got the same value
 			if (tempvalue > 0) {
 				if (tempvalue > maxvalue) {
 					maxvalue = tempvalue;
 					highscore = p;
 				}
-				if (tempvalue == maxvalue) { //take wind into account
+				if (tempvalue == maxvalue) { // take wind into account
 					Velocity wind = knowledge.getWindVelocity();
 					double direction = wind.direction;
 					double directionfirea = Tools.getAngle(p, Pos);
@@ -758,48 +767,51 @@ public class Firefighter {
 				}
 			}
 		}
-		//If no fire was found firefighter should explore
-		//Firefighters should spread out such that they cover as many fields as possible for observation and have as less fields as possible shared
+		// If no fire was found firefighter should explore
+		// Firefighters should spread out such that they cover as many fields as
+		// possible for observation and have as less fields as possible shared
 		if (highscore == null) {
-		for (int x = 1; x <= gridXsize; x++) {
-			for (int y = 1; y <= gridYsize; y++) {
-				GridPoint p = new GridPoint(x, y);
-				boolean valid = false;
-				//search for all grid points that have a distance of 2 times of how far they can see to the other firefighters or their tasks
-				//for every firefighter
-					//if has task
-						//check if girdpoint is 2times sightrange away if so mark boolean as true if not continue 
-					//else
-						//check if gridpoint is 2 times sightrange away from current position if not continue (biger for loop)
-				
-				for (int tmpID : knowledge.getAllFirefighters().keySet()) {
-					//first check for the current task
-					if(knowledge.getTask(tmpID) != null) {
-						GridPoint q = knowledge.getTask(tmpID);
-						int dist = Tools.getDistance(p,q);
-						if (dist == 2 * sightRange) {
-							valid = true;
+			for (int x = 1; x <= gridXsize; x++) {
+				for (int y = 1; y <= gridYsize; y++) {
+					GridPoint p = new GridPoint(x, y);
+					boolean valid = false;
+					// search for all grid points that have a distance of 2 times of how far they
+					// can see to the other firefighters or their tasks
+					// for every firefighter
+					// if has task
+					// check if girdpoint is 2times sightrange away if so mark boolean as true if
+					// not continue
+					// else
+					// check if gridpoint is 2 times sightrange away from current position if not
+					// continue (biger for loop)
+
+					for (int tmpID : knowledge.getAllFirefighters().keySet()) {
+						// first check for the current task
+						if (knowledge.getTask(tmpID) != null) {
+							GridPoint q = knowledge.getTask(tmpID);
+							int dist = Tools.getDistance(p, q);
+							if (dist == 2 * sightRange) {
+								valid = true;
+							}
+						} else { // check for the current position
+							GridPoint q = knowledge.getFirefighter(tmpID);
+							int dist = Tools.getDistance(p, q);
+							if (dist == 2 * sightRange)
+								valid = true;
 						}
 					}
-					else { //check for the current position
-						GridPoint q = knowledge.getFirefighter(tmpID);
-						int dist = Tools.getDistance(p,q);
-						if (dist == 2 * sightRange)
-							valid = true;
+
+					if (valid == true) {
+						int dist = Tools.getDistance(Pos, p);
+						int tempvalue = -dist;
+						if (tempvalue > maxvalue) {
+							maxvalue = tempvalue;
+							highscore = p;
+						}
 					}
+
 				}
-				
-				if (valid == true) {
-					int dist = Tools.getDistance(Pos, p);
-					int tempvalue = -dist;
-					if (tempvalue > maxvalue) {
-						maxvalue = tempvalue;
-						highscore = p;
-					}
-				}
-				
 			}
-		}
 		}
 		if (highscore == null) {
 			return grid.getLocation(this);
@@ -860,6 +872,28 @@ public class Firefighter {
 				knowledge.addRain(grid.getLocation(o));
 			}
 		}
+	}
+
+	/**
+	 * Calculates who of the firefighters was probably the same as seen the round
+	 * before If a seen firefighter has distance lower than two to the seen
+	 * firefighters of last round, he is not new
+	 * 
+	 * @return Gridpoint list of who of the seen firefighters is new
+	 */
+	private ArrayList<GridPoint> computeNewSeenFirefighters() {
+		if (sightedFirefighters == null || sightedFirefightersLastStep == null || sightedFirefightersLastStep.isEmpty()
+				|| sightedFirefighters.isEmpty())
+			return sightedFirefighters;
+		@SuppressWarnings("unchecked")
+		ArrayList<GridPoint> newSeenFirefighters = (ArrayList<GridPoint>) sightedFirefighters.clone();
+		for (GridPoint newff : sightedFirefighters) {
+			for (GridPoint oldff : sightedFirefightersLastStep) {
+				if (Tools.getDistance(newff, oldff) < 2)
+					newSeenFirefighters.remove(newff);
+			}
+		}
+		return newSeenFirefighters;
 	}
 
 	/** The method for removal of the object */
