@@ -108,6 +108,7 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 		RunEnvironment.getInstance().endAt(endTick);
 
 		// Add global counters to context
+		context.add(new IndividualMessageCounter());
 		context.add(new ExtinguishedFireCounter());
 		context.add(new WeatherCheckCounter());
 		context.add(new FireKnowledgeUpdateCounter());

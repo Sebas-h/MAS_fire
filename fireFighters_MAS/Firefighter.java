@@ -85,8 +85,8 @@ public class Firefighter {
 		this.id = id;
 		this.role = Role.Alone;
 		tasksSent = 0;
-		bountySpent=0;
-		bountyTransferred=0;
+		bountySpent = 0;
+		bountyTransferred = 0;
 		iWasLeader = false;
 		oldleader = id;
 		leader = id;
@@ -121,6 +121,14 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
+
+		// if (id==1) {
+		// int totalMessages = ((IGlobalCounter)
+		// context.getObjects(MessageSentCounter.class).get(0)).getCounter();
+		// System.out.println("Total: "+totalMessages);
+		// ((IndividualMessageCounter)
+		// context.getObjects(IndividualMessageCounter.class).get(0)).printCounter();
+		// }
 
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
@@ -211,11 +219,11 @@ public class Firefighter {
 				if (oldleader != this.id) {
 					// Update old leader what I can see in case he informs the actual leader after
 					// me which can lead to wrong knowledge in the new leader
-					sendMessage(oldleaderMethod, oldleaderloc, MessageType.ISEE);
+					sendMessage(oldleaderMethod, oldleaderloc, MessageType.ISEENEW);
 					// Update new leader that there was an old leader
 					sendMessage(leaderMethod, leaderloc, MessageType.OLDLEADER);
 					// Send leader what I can see
-					sendMessage(leaderMethod, leaderloc, MessageType.ISEE);
+					sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
 				} else if (oldleader == this.id) {
 					// in case the firefighter was degraded from leader to follower, he has to send
 					// the new leader all the information
@@ -247,7 +255,7 @@ public class Firefighter {
 				}
 			}
 			// Send wind update
-			if (windUpdate && knowledge.getAllFire() != null) {
+			if (windUpdate && !knowledge.getAllFire().isEmpty()) {
 				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
 				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
 			}
@@ -644,11 +652,17 @@ public class Firefighter {
 		// counts the general message sending actions
 		((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).incrementCounter();
 
-		for (GridPoint recipientLocation : recipientLocations) {
-			Firefighter recipient = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, recipientLocation);
+		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
+				.getObjects(IndividualMessageCounter.class).get(0));
 
+		for (GridPoint recipientLocation : recipientLocations) {
+
+			Firefighter recipient = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, recipientLocation);
+			if (recipient == null)
+				indMesCount.incrementcountNotRecieved();
 			if (recipient != null) // First of all, if the recipient is there at all
 			{
+				indMesCount.increment(messageType);
 				if (transmissionMethod == TransmissionMethod.Radio
 						&& Tools.getDistance(myPos, recipientLocation) <= radioRange) // If using the radio, and the
 																						// recipient is within range
@@ -656,7 +670,7 @@ public class Firefighter {
 					if (getBounty() >= messageCost) {
 						recipient.recieveMessage(message); // Deliver message
 						// bounty -= messageCost; // Pay for the message
-						bountySpent+=messageCost;
+						bountySpent += messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
@@ -670,7 +684,7 @@ public class Firefighter {
 						recipient.recieveMessage(message); // Deliver message
 
 						// bounty -= globalMessageCost; // Pay for the message
-						bountySpent+=messageCost;
+						bountySpent += messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
 								.addMessage(message.getContent());
@@ -946,11 +960,11 @@ public class Firefighter {
 	public int getTasksSent() {
 		return tasksSent;
 	}
-	
+
 	public int getBountySpent() {
 		return bountySpent;
 	}
-	
+
 	public int getBountyTransferred() {
 		return bountyTransferred;
 	}
