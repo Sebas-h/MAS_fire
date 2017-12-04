@@ -46,6 +46,7 @@ public class Firefighter {
 	private int bounty; // Bounty units the firefighter has
 	private int tasksSent;
 	private int bountySpent;
+	private int bountyToBeSent;
 	private int bountyTransferred;
 	// Local variables initialization
 	private boolean newInfo; // Flag if the firefighter has a new info to communicate to peers
@@ -86,6 +87,7 @@ public class Firefighter {
 		this.role = Role.Alone;
 		tasksSent = 0;
 		bountySpent = 0;
+		bountyToBeSent = 0;
 		bountyTransferred = 0;
 		iWasLeader = false;
 		oldleader = id;
@@ -121,7 +123,6 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-
 		// if (id==1) {
 		// int totalMessages = ((IGlobalCounter)
 		// context.getObjects(MessageSentCounter.class).get(0)).getCounter();
@@ -130,6 +131,11 @@ public class Firefighter {
 		// context.getObjects(IndividualMessageCounter.class).get(0)).printCounter();
 		// }
 
+		// See if you received new bounty
+		if (knowledge.getNewBounty() > 0) {
+			bounty = bounty + knowledge.getNewBounty();
+			knowledge.setNewBounty(0);
+		}
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
 		// increases a score for each known fire by 1
@@ -205,8 +211,11 @@ public class Firefighter {
 				knowledge.getFirefighter(oldleader)) <= radioDist) ? TransmissionMethod.Radio
 						: TransmissionMethod.Satellite;
 
+		// Send Bounty to people if needed
+
 		// Communicating to Follower and Leader
 		if (role == Role.Follower) {
+			sendBounty(100, knowledge.getFirefighter(leader), TransmissionMethod.Satellite);
 			ArrayList<GridPoint> oldleaderloc = new ArrayList<GridPoint>(
 					Arrays.asList(knowledge.getFirefighter(oldleader)));
 			ArrayList<GridPoint> leaderloc = new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader)));
@@ -643,6 +652,9 @@ public class Firefighter {
 			message.setContent(
 					"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction + ";");
 			break;
+		case BOUNTY:
+			message.setContent("B " + bountyToBeSent + ";");
+			break;
 		default:
 			break;
 		}
@@ -679,7 +691,6 @@ public class Firefighter {
 				} else if (transmissionMethod == TransmissionMethod.Satellite) {
 					double globalMessageCost = messageCost * satelliteCostMultiplier; // A cost to send a message
 																						// through the satellite
-
 					if (getBounty() >= globalMessageCost) {
 						recipient.recieveMessage(message); // Deliver message
 
@@ -922,6 +933,16 @@ public class Firefighter {
 		if (!Tools.isLastTick()) {
 			context.remove(this);
 		} // Do not include this in the executeEndActions()
+	}
+
+	public boolean sendBounty(int sendbounty, GridPoint Firefighter, TransmissionMethod transmissionmethod) {
+		if (bounty - sendbounty <= 0)
+			return false;
+		this.bountyToBeSent = sendbounty;
+		bounty = bounty - sendbounty;
+		sendMessage(transmissionmethod, new ArrayList<GridPoint>(Arrays.asList(Firefighter)), MessageType.BOUNTY);
+		this.bountyToBeSent = 0;
+		return true;
 	}
 
 	/// Local getters & setters

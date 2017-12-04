@@ -31,6 +31,7 @@ public class Knowledge {
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge; // A hash with locations, and corresponding flags of rain
 																// presence in the knowledge
 	private LinkedHashMap<Integer, GridPoint> givenTasks;
+	private ArrayList<Integer> deadFirefighterKnowledge;
 	// private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's
 	// of my friends
 	private Velocity windVelocity; // A knowledge about the wind velocity
@@ -38,6 +39,7 @@ public class Knowledge {
 	private GridPoint currentTask;
 	private int radioDistance;
 	private GridPoint radioDistPosition;
+	private int newBounty;
 
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
@@ -49,6 +51,7 @@ public class Knowledge {
 		this.givenTasks = new LinkedHashMap<Integer, GridPoint>();
 		this.windVelocity = null;
 		this.context = context;
+		this.newBounty = 0;
 	}
 
 	public GridPoint getCurrentTask() {
@@ -489,6 +492,9 @@ public class Knowledge {
 			if (arr2[0].equals("F")) {
 				addFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 			}
+			if (arr2[0].equals("B")) {
+				newBounty = newBounty + Integer.parseInt(arr2[1]);
+			}
 			if (arr2[0].equals("NF")) {
 				removeFire(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
 				addBurnedForest(new GridPoint(Integer.parseInt(arr2[1]), Integer.parseInt(arr2[2])));
@@ -504,6 +510,7 @@ public class Knowledge {
 			}
 			if (arr2[0].equals("DF")) {
 				removeFirefighter(Integer.parseInt(arr2[1]));
+				deadFirefighterKnowledge.add(Integer.parseInt(arr2[1]));
 			}
 
 			if (arr2[0].equals("T")) {
@@ -532,7 +539,10 @@ public class Knowledge {
 			// context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
 		for (GridPoint pos : k.getAllForest()) {
-			addForest(pos);
+			if (k.getForest(pos))
+				addForest(pos);
+			else
+				addBurnedForest(pos);
 			// Increment successful knowledge update about forest:
 			((IGlobalCounter) context.getObjects(ForestKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
@@ -545,7 +555,13 @@ public class Knowledge {
 		if (k.getCurrentTask() != null) {
 			setCurrentTask(k.getCurrentTask());
 		}
+		this.windVelocity = k.windVelocity;
 
+		newBounty = newBounty + k.getNewBounty();
+
+		for (Integer id : k.deadFirefighterKnowledge) {
+			removeFirefighter(id);
+		}
 	}
 
 	// Local getters
@@ -629,5 +645,13 @@ public class Knowledge {
 	 */
 	public void setWindVelocity(Velocity vel) {
 		windVelocity = vel;
+	}
+
+	public int getNewBounty() {
+		return newBounty;
+	}
+
+	public void setNewBounty(int newBounty) {
+		this.newBounty = newBounty;
 	}
 }
