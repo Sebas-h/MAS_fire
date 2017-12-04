@@ -559,8 +559,10 @@ public class Knowledge {
 
 		newBounty = newBounty + k.getNewBounty();
 
-		for (Integer id : k.deadFirefighterKnowledge) {
-			removeFirefighter(id);
+		if (k.deadFirefighterKnowledge != null) {
+			for (Integer id : k.deadFirefighterKnowledge) {
+				removeFirefighter(id);
+			}
 		}
 	}
 
