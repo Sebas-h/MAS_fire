@@ -801,11 +801,12 @@ public class Firefighter {
 		// If no fire was found firefighter should explore
 		// Firefighters should spread out such that they cover as many fields as
 		// possible for observation and have as less fields as possible shared
+		
 		if (highscore == null) {
 			for (int x = 1; x <= gridXsize; x++) {
 				for (int y = 1; y <= gridYsize; y++) {
-					GridPoint p = new GridPoint(x, y);
-					boolean valid = false;
+					GridPoint p = new GridPoint(x,y);
+					boolean valid = true;
 					// search for all grid points that have a distance of 2 times of how far they
 					// can see to the other firefighters or their tasks
 					// for every firefighter
@@ -821,14 +822,14 @@ public class Firefighter {
 						if (knowledge.getTask(tmpID) != null) {
 							GridPoint q = knowledge.getTask(tmpID);
 							int dist = Tools.getDistance(p, q);
-							if (dist == 2 * sightRange) {
-								valid = true;
+							if (dist <= 2 * sightRange) {
+								valid = false;
 							}
 						} else { // check for the current position
 							GridPoint q = knowledge.getFirefighter(tmpID);
 							int dist = Tools.getDistance(p, q);
-							if (dist == 2 * sightRange)
-								valid = true;
+							if (dist <= 2 * sightRange)
+								valid = false;
 						}
 					}
 
@@ -843,9 +844,6 @@ public class Firefighter {
 
 				}
 			}
-		}
-		if (highscore == null) {
-			return grid.getLocation(this);
 		}
 		return highscore;
 	}
