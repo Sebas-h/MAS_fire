@@ -625,7 +625,7 @@ public class Firefighter {
 			break;
 		case POSITION:
 			GridPoint position = this.grid.getLocation(this);
-			message.setContent("FF " + position.getX() + " " + position.getY() + " " + this.id + ";");
+			message.setContent("FF " + position.getX() + " " + position.getY() + " " + this.id);
 			break;
 		case ISEENEW:
 			// Update leader only with stuff that is new!
@@ -636,24 +636,28 @@ public class Firefighter {
 			message.setContent(this.knowledge.WhatIsee2String(myPos, sightRange));
 			break;
 		case LEADER:
-			message.setContent("HW " + leaderLocation.getX() + " " + leaderLocation.getY() + " " + this.leader + ";");
+			message.setContent("HW " + leaderLocation.getX() + " " + leaderLocation.getY() + " " + this.leader);
 			break;
 		case OLDLEADER:
 			message.setContent(
-					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader + ";");
+					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader);
 			break;
 		case BYE:
 			message.setContent("DF " + id);
 			break;
 		case TASK:
-			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY() + ";");
+			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY());
 			break;
 		case WIND:
-			message.setContent(
-					"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction + ";");
+			if(knowledge.getWindVelocity()==null) {
+				message.setContent(""); //because of nullpointer
+			}else {
+				message.setContent(
+						"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction);
+			}
 			break;
 		case BOUNTY:
-			message.setContent("B " + bountyToBeSent + ";");
+			message.setContent("B " + bountyToBeSent);
 			break;
 		default:
 			break;
@@ -681,7 +685,7 @@ public class Firefighter {
 				{
 					if (getBounty() >= messageCost) {
 						recipient.recieveMessage(message); // Deliver message
-						// bounty -= messageCost; // Pay for the message
+						bounty -= messageCost; // Pay for the message
 						bountySpent += messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
@@ -694,7 +698,7 @@ public class Firefighter {
 					if (getBounty() >= globalMessageCost) {
 						recipient.recieveMessage(message); // Deliver message
 
-						// bounty -= globalMessageCost; // Pay for the message
+						bounty -= globalMessageCost; // Pay for the message
 						bountySpent += messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
@@ -938,6 +942,7 @@ public class Firefighter {
 			return false;
 		this.bountyToBeSent = sendbounty;
 		bounty = bounty - sendbounty;
+		bountyTransferred+=sendbounty;
 		sendMessage(transmissionmethod, new ArrayList<GridPoint>(Arrays.asList(Firefighter)), MessageType.BOUNTY);
 		this.bountyToBeSent = 0;
 		return true;
