@@ -625,7 +625,7 @@ public class Firefighter {
 			break;
 		case POSITION:
 			GridPoint position = this.grid.getLocation(this);
-			message.setContent("FF " + position.getX() + " " + position.getY() + " " + this.id + ";");
+			message.setContent("FF " + position.getX() + " " + position.getY() + " " + this.id);
 			break;
 		case ISEENEW:
 			// Update leader only with stuff that is new!
@@ -636,28 +636,28 @@ public class Firefighter {
 			message.setContent(this.knowledge.WhatIsee2String(myPos, sightRange));
 			break;
 		case LEADER:
-			message.setContent("HW " + leaderLocation.getX() + " " + leaderLocation.getY() + " " + this.leader + ";");
+			message.setContent("HW " + leaderLocation.getX() + " " + leaderLocation.getY() + " " + this.leader);
 			break;
 		case OLDLEADER:
 			message.setContent(
-					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader + ";");
+					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader);
 			break;
 		case BYE:
 			message.setContent("DF " + id);
 			break;
 		case TASK:
-			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY() + ";");
+			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY());
 			break;
 		case WIND:
 			if(knowledge.getWindVelocity()==null) {
 				message.setContent(""); //because of nullpointer
 			}else {
 				message.setContent(
-						"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction + ";");
+						"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction);
 			}
 			break;
 		case BOUNTY:
-			message.setContent("B " + bountyToBeSent + ";");
+			message.setContent("B " + bountyToBeSent);
 			break;
 		default:
 			break;
