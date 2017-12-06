@@ -124,13 +124,6 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-		// if (id == 1) {
-		// int totalMessages = ((IGlobalCounter)
-		// context.getObjects(MessageSentCounter.class).get(0)).getCounter();
-		// System.out.println("Total: " + totalMessages);
-		// ((IndividualMessageCounter)
-		// context.getObjects(IndividualMessageCounter.class).get(0)).printCounter();
-		// }
 
 		// See if you received new bounty
 		if (knowledge.getNewBounty() > 0) {
@@ -151,19 +144,8 @@ public class Firefighter {
 			return;
 		}
 
-		if (role == Role.Leader)
-			iWasLeader = true;
-		// Safe the old leader to know if leader changed
-		oldleader = leader;
-		// Check if firefighter is leader, follower or alone
-		assignRole();
-
 		// Action part (takes one step)
 		boolean checkWeather = false;
-		if (role == Role.Leader) {
-			// checkWeather = RandomHelper.nextDouble() < 0.5;
-			checkWeather = true;
-		}
 
 		if (knowledge.getFire(myPos) > 0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
@@ -178,98 +160,11 @@ public class Firefighter {
 		} else {
 			moveOrExtinguish(); // includes moving to task location
 		}
+
 		// Update own location
 		myPos = grid.getLocation(this);
 		// Add myself into my knowledge in case I haven't done that before
 		knowledge.addFirefighter(myPos, id);
-
-		// Communication part (takes no time)
-
-		// split the follower in follower within the radio distance and the other ones.
-		ArrayList<GridPoint> radioFollower = new ArrayList<>();
-		ArrayList<GridPoint> satFollower = new ArrayList<>();
-		HashMap<Integer, GridPoint> followers = knowledge.getAllFirefighters();
-		// don't send message to himself
-		followers.remove(id);
-		// distribute all followers in the one which are in the radio range and they who
-		// a re not
-		for (GridPoint gridPoint : knowledge.getAllFirefighters().values()) {
-			if (Tools.getDistance(grid.getLocation(this), gridPoint) <= radioDist) {
-				radioFollower.add(gridPoint);
-			} else {
-				satFollower.add(gridPoint);
-			}
-		}
-
-		// Handwaving to everyone in my sight that is new!
-		sendMessage(TransmissionMethod.Radio, computeNewSeenFirefighters(), MessageType.LEADER);
-
-		// Distinguish between people in my radio sight and people who are not
-		TransmissionMethod leaderMethod = (Tools.getDistance(grid.getLocation(this),
-				knowledge.getFirefighter(leader)) <= radioDist) ? TransmissionMethod.Radio
-						: TransmissionMethod.Satellite;
-		TransmissionMethod oldleaderMethod = (Tools.getDistance(grid.getLocation(this),
-				knowledge.getFirefighter(oldleader)) <= radioDist) ? TransmissionMethod.Radio
-						: TransmissionMethod.Satellite;
-
-		// Send Bounty to people if needed
-
-		// Communicating to Follower and Leader
-		if (role == Role.Follower) {
-			sendBounty(100, knowledge.getFirefighter(leader), TransmissionMethod.Satellite);
-			ArrayList<GridPoint> oldleaderloc = new ArrayList<GridPoint>(
-					Arrays.asList(knowledge.getFirefighter(oldleader)));
-			ArrayList<GridPoint> leaderloc = new ArrayList<GridPoint>(Arrays.asList(knowledge.getFirefighter(leader)));
-			// If there is a leader change:
-			if (oldleader != leader) {
-				// Update all the firefighters in my knowledge, that there is a new leader
-				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.LEADER);
-				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.LEADER);
-				// If I had a different old leader
-				if (oldleader != this.id) {
-					// Update old leader what I can see in case he informs the actual leader after
-					// me which can lead to wrong knowledge in the new leader
-					sendMessage(oldleaderMethod, oldleaderloc, MessageType.ISEENEW);
-					// Update new leader that there was an old leader
-					sendMessage(leaderMethod, leaderloc, MessageType.OLDLEADER);
-					// Send leader what I can see
-					sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
-				} else if (oldleader == this.id) {
-					// in case the firefighter was degraded from leader to follower, he has to send
-					// the new leader all the information
-					if (iWasLeader)
-						sendMessage(leaderMethod, leaderloc, MessageType.ALL);
-					else
-						sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
-				}
-			} else
-			// Send leader what I can see if he hasn't changed and if I see new things
-			if (newInfo)
-				sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
-			if (moved)
-				sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
-
-		} else if (role == Role.Leader) {
-			// Send each follower specific task and my position in case I moved
-			for (int followerID : followers.keySet()) {
-				GridPoint destination = followers.get(followerID);
-				ArrayList<GridPoint> destinationList = new ArrayList<GridPoint>(Arrays.asList(destination));
-				if (moved)
-					sendMessage(getTransmissionMethode(destination), destinationList, MessageType.POSITION);
-				TaskToGive = evaluate(followerID);
-
-				if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
-					sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
-					knowledge.addTask(followerID, TaskToGive);
-					tasksSent++;
-				}
-			}
-			// Send wind update
-			if (windUpdate && !knowledge.getAllFire().isEmpty()) {
-				sendMessage(TransmissionMethod.Radio, radioFollower, MessageType.WIND);
-				sendMessage(TransmissionMethod.Satellite, satFollower, MessageType.WIND);
-			}
-		}
 
 		// Set newknowledge to zero
 		newknowledge = new Knowledge(this.context);
@@ -610,7 +505,7 @@ public class Firefighter {
 	 * @param transmissionMethod
 	 *            - a method to used for message sending
 	 * @param recipientLocations
-	 *            - a list of locations of firefighters to send the message to
+	 *            - a list of locations of firefighters to send the message to (only important if radio)
 	 */
 	public void sendMessage(TransmissionMethod transmissionMethod, ArrayList<GridPoint> recipientLocations,
 			MessageType messageType) {
@@ -665,16 +560,21 @@ public class Firefighter {
 		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
 				.getObjects(IndividualMessageCounter.class).get(0));
 
-		if (transmissionMethod == TransmissionMethod.Radio) sendLocalMessage(recipientLocations, message);
-		else sendGlobalMessage(message);
+		if (transmissionMethod == TransmissionMethod.Radio)
+			sendLocalMessage(recipientLocations, message);
+		else
+			sendGlobalMessage(message);
 
 		newInfo = false; // All the new information was sent, over now
 	}
-	
+
 	/**
 	 * Sends local method to the firefighters
-	 * @param recipientLocations firefighter location that the message should be sent to
-	 * @param message message that should be sent
+	 * 
+	 * @param recipientLocations
+	 *            firefighter location that the message should be sent to
+	 * @param message
+	 *            message that should be sent
 	 */
 	public void sendLocalMessage(ArrayList<GridPoint> recipientLocations, Message message) {
 		Parameters params = RunEnvironment.getInstance().getParameters();
