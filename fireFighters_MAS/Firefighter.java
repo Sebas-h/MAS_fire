@@ -3,6 +3,7 @@ package fireFighters_MAS;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import antlr.build.Tool;
@@ -639,8 +640,7 @@ public class Firefighter {
 			message.setContent("HW " + leaderLocation.getX() + " " + leaderLocation.getY() + " " + this.leader);
 			break;
 		case OLDLEADER:
-			message.setContent(
-					"HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader);
+			message.setContent("HW " + oldleaderLocation.getX() + " " + oldleaderLocation.getY() + " " + this.leader);
 			break;
 		case BYE:
 			message.setContent("DF " + id);
@@ -649,9 +649,9 @@ public class Firefighter {
 			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY());
 			break;
 		case WIND:
-			if(knowledge.getWindVelocity()==null) {
-				message.setContent(""); //because of nullpointer
-			}else {
+			if (knowledge.getWindVelocity() == null) {
+				message.setContent(""); // because of nullpointer
+			} else {
 				message.setContent(
 						"W " + knowledge.getWindVelocity().speed + " " + knowledge.getWindVelocity().direction);
 			}
@@ -696,7 +696,8 @@ public class Firefighter {
 					double globalMessageCost = messageCost * satelliteCostMultiplier; // A cost to send a message
 																						// through the satellite
 					if (getBounty() >= globalMessageCost) {
-						recipient.recieveMessage(message); // Deliver message
+
+						// recipient.recieveMessage(message); // Deliver message
 
 						bounty -= globalMessageCost; // Pay for the message
 						bountySpent += messageCost;
@@ -708,6 +709,55 @@ public class Firefighter {
 			}
 		}
 
+		newInfo = false; // All the new information was sent, over now
+	}
+
+	/**
+	 * Sends a global message to every firefighter on the map using the Satellite
+	 * transmission method
+	 * 
+	 * @param message
+	 *            the message to be send to every firefighter
+	 */
+	public void sendGlobalMessage(Message message) {
+		Parameters params = RunEnvironment.getInstance().getParameters();
+		int messageCost = message.getCost();
+		int satelliteCostMultiplier = params.getInteger("firefighter_satellite_cost_multiplier");
+
+		// Get recipient locations of all firefighter on the map:
+		IndexedIterable<Object> firefightersFromContext = context.getObjects(Firefighter.class);
+		List<Firefighter> allFirefighters = new ArrayList<>();
+		for (Object firefighterFromContext : firefightersFromContext) {
+			// Casting to type Firefighter:
+			Firefighter firefighter = (Firefighter) firefighterFromContext;
+			// Do not send message to myself:
+			if (firefighter.equals(this)) continue;
+			else allFirefighters.add(firefighter); 
+		}
+		// Increment counters:
+		((IGlobalCounter) context.getObjects(MsgMethodCounter.class).get(0)).incrementCounter();
+		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
+				.getObjects(IndividualMessageCounter.class).get(0));
+
+		for (Firefighter recipient : allFirefighters) {
+			if (recipient != null) // First of all check if the recipient is there at all
+			{
+				double globalMessageCost = messageCost * satelliteCostMultiplier; // A cost to send a message
+				if (getBounty() >= globalMessageCost) {
+					recipient.recieveMessage(message); // Deliver message
+					bounty -= globalMessageCost; // Pay for the message
+					bountySpent += messageCost;
+
+					// Increment counters:
+					((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
+					((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
+							.addMessage(message.getContent());
+					indMesCount.increment(MessageType.ALL);
+				}
+			}
+			else
+				indMesCount.incrementcountNotRecieved();
+		}
 		newInfo = false; // All the new information was sent, over now
 	}
 
@@ -805,11 +855,11 @@ public class Firefighter {
 		// If no fire was found firefighter should explore
 		// Firefighters should spread out such that they cover as many fields as
 		// possible for observation and have as less fields as possible shared
-		
+
 		if (highscore == null) {
 			for (int x = 1; x <= gridXsize; x++) {
 				for (int y = 1; y <= gridYsize; y++) {
-					GridPoint p = new GridPoint(x,y);
+					GridPoint p = new GridPoint(x, y);
 					boolean valid = true;
 					// search for all grid points that have a distance of 2 times of how far they
 					// can see to the other firefighters or their tasks
@@ -942,7 +992,7 @@ public class Firefighter {
 			return false;
 		this.bountyToBeSent = sendbounty;
 		bounty = bounty - sendbounty;
-		bountyTransferred+=sendbounty;
+		bountyTransferred += sendbounty;
 		sendMessage(transmissionmethod, new ArrayList<GridPoint>(Arrays.asList(Firefighter)), MessageType.BOUNTY);
 		this.bountyToBeSent = 0;
 		return true;
