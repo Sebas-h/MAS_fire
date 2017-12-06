@@ -12,34 +12,53 @@ public class IndividualMessageCounter {
 	private int countBye;
 	private int countNotRecieved;
 
-	public void increment(MessageType messageType) {
+	private double countPosCost;
+	private double countHWCost;
+	private double countTaskCost;
+	private double countLUCost;
+	private double countInfoToLCost;
+	private double countWindCost;
+	private double countByeCost;
+	private double countNotRecievedCost;
+
+	
+	public void increment(MessageType messageType,int cost) {
 		switch (messageType) {
 		case ALL:
 			incrementcountLU();
+			countLUCost += cost;
 			break;
 		case POSITION:
 			incrementcountPos();
+			countPosCost += cost;
 			break;
 		case ISEENEW:
 			incrementcountInfoToL();
+			countInfoToLCost += cost;
 			break;
 		case ISEE:
 			incrementcountInfoToL();
+			countInfoToLCost += cost;
 			break;
 		case LEADER:
 			incrementcountHW();
+			countHWCost += cost;
 			break;
 		case OLDLEADER:
 			incrementcountHW();
+			countHWCost += cost;
 			break;
 		case BYE:
 			incrementcountBye();
+			countByeCost += cost;
 			break;
 		case TASK:
 			incrementcountTask();
+			countTaskCost += cost;
 			break;
 		case WIND:
 			incrementcountWind();
+			countWindCost += cost;
 			break;
 		default:
 			break;
@@ -89,13 +108,13 @@ public class IndividualMessageCounter {
 	}
 
 	public void printCounter() {
-		System.out.println("Position " + countPos);
-		System.out.println("HW " + countHW);
-		System.out.println("Task " + countTask);
-		System.out.println("LeaderUpdate " + countLU);
-		System.out.println("ISEE " + countInfoToL);
-		System.out.println("Wind " + countWind);
-		System.out.println("Bye " + countBye);
+		System.out.println("Position " + countPos + "Cost "+countPosCost);
+		System.out.println("HW " + countHW + "Cost "+countHWCost);
+		System.out.println("Task " + countTask + "Cost "+countTaskCost);
+		System.out.println("LeaderUpdate " + countLU + "Cost "+countLUCost);
+		System.out.println("ISEE " + countInfoToL + "Cost "+countInfoToLCost);
+		System.out.println("Wind " + countWind + "Cost "+countWindCost);
+		System.out.println("Bye " + countBye + "Cost "+countByeCost);
 		System.out.println("Not Recieved " + countNotRecieved);
 	}
 

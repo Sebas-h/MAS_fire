@@ -123,13 +123,11 @@ public class Firefighter {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-		// if (id==1) {
-		// int totalMessages = ((IGlobalCounter)
-		// context.getObjects(MessageSentCounter.class).get(0)).getCounter();
-		// System.out.println("Total: "+totalMessages);
-		// ((IndividualMessageCounter)
-		// context.getObjects(IndividualMessageCounter.class).get(0)).printCounter();
-		// }
+//		if (id == 1) {
+//			int totalMessages = ((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).getCounter();
+//			System.out.println("Total: " + totalMessages);
+//			((IndividualMessageCounter) context.getObjects(IndividualMessageCounter.class).get(0)).printCounter();
+//		}
 
 		// See if you received new bounty
 		if (knowledge.getNewBounty() > 0) {
@@ -678,14 +676,14 @@ public class Firefighter {
 				indMesCount.incrementcountNotRecieved();
 			if (recipient != null) // First of all, if the recipient is there at all
 			{
-				indMesCount.increment(messageType);
+				indMesCount.increment(messageType,messageCost);
 				if (transmissionMethod == TransmissionMethod.Radio
 						&& Tools.getDistance(myPos, recipientLocation) <= radioRange) // If using the radio, and the
 																						// recipient is within range
 				{
 					if (getBounty() >= messageCost) {
 						recipient.recieveMessage(message); // Deliver message
-						bounty -= messageCost; // Pay for the message
+						//bounty -= messageCost; // Pay for the message
 						bountySpent += messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
@@ -698,7 +696,7 @@ public class Firefighter {
 					if (getBounty() >= globalMessageCost) {
 						recipient.recieveMessage(message); // Deliver message
 
-						bounty -= globalMessageCost; // Pay for the message
+						//bounty -= globalMessageCost; // Pay for the message
 						bountySpent += messageCost;
 						((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
