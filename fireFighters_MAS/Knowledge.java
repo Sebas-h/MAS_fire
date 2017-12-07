@@ -31,6 +31,9 @@ public class Knowledge {
 	private LinkedHashMap<GridPoint, Boolean> rainKnowledge; // A hash with locations, and corresponding flags of rain
 																// presence in the knowledge
 	private LinkedHashMap<Integer, GridPoint> givenTasks;
+
+	private LinkedHashMap<Integer, GridPoint> myGroup; // Locations and ID of the people in my group
+
 	private ArrayList<Integer> deadFirefighterKnowledge;
 	// private ArrayList<Integer> firefighterID; //Storage for all firefighter ID's
 	// of my friends
@@ -49,6 +52,7 @@ public class Knowledge {
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.givenTasks = new LinkedHashMap<Integer, GridPoint>();
+		this.myGroup = new LinkedHashMap<Integer,GridPoint>();
 		this.windVelocity = null;
 		this.context = context;
 		this.newBounty = 0;
@@ -277,6 +281,49 @@ public class Knowledge {
 		}
 		firefighterKnowledge.put(ID, pos);
 		return true;
+	}
+
+	/**
+	 * Adds a firefighter to my group
+	 * 
+	 * @param pos
+	 *            location
+	 * @param ID
+	 *            firefighter id
+	 * @return
+	 */
+	public boolean addToMyGroup(GridPoint pos, Integer ID) {
+			for (Integer id : myGroup.keySet()) {
+				// Update position in case he moved without noticing
+				if (id.equals(ID)) {
+					myGroup.put(ID, pos);
+					return false;
+				}
+			}
+		myGroup.put(ID, pos);
+		return true;
+	}
+
+
+	
+	public HashMap<Integer, GridPoint> getMyGroup() {
+		HashMap<Integer, GridPoint> returnHashMap = new HashMap<Integer, GridPoint>();
+
+		if (myGroup != null) {
+			for (Integer id : myGroup.keySet()) {
+				if (myGroup.get(id) != null) {
+					returnHashMap.put(id, myGroup.get(id));
+				}
+			}
+		}
+		return returnHashMap;
+	}
+
+	public int getNumberOfFriends() {
+		int number = 0;
+		for (int ids : firefighterKnowledge.keySet())
+			number++;
+		return number;
 	}
 
 	public boolean addTask(Integer ID, GridPoint pos) {
