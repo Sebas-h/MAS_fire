@@ -276,6 +276,9 @@ public class Knowledge {
 			// Update position in case he moved without noticing
 			if (id.equals(ID)) {
 				firefighterKnowledge.put(ID, pos);
+				for (Integer groupID : myGroup.keySet()) {
+					if (groupID.equals(ID)) myGroup.put(groupID, pos);
+				}
 				return false;
 			}
 		}
