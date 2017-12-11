@@ -43,7 +43,7 @@ public class Knowledge {
 	private int radioDistance;
 	private GridPoint radioDistPosition;
 	private int newBounty;
-	private double GroupDirection;
+	private double GroupDirection = 0;
 	private int GroupDirectionCounter = 10; //needs to be bigger than 5 to start 
 
 
@@ -628,9 +628,10 @@ public class Knowledge {
 			setCurrentTask(k.getCurrentTask());
 		}
 		if (k.getGroupDirection() != 0) {
+			if (k.getGroupDirection() != GroupDirection) {
 		GroupDirection = k.getGroupDirection();
 		GroupDirectionCounter = 0;
-		}
+		}}
 		/*if (k.getGroupDirection() != getGroupDirection()) {
 			setGroupDirection(k.getGroupDirection());
 			setGroupDirectionCounter(0);

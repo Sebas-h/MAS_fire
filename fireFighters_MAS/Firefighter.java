@@ -197,7 +197,7 @@ public class Firefighter {
 		} else {
 			if (foundGroup == true) {
 				if (knowledge.getCurrentTask() == null) {
-					if (knowledge.getGroupDirectionCounter() >= 5) {
+					if (knowledge.getGroupDirectionCounter() >= 3) {
 						double GroupDirection = RandomHelper.nextDoubleFromTo(1, 360);
 						knowledge.setGroupDirection(GroupDirection);
 						knowledge.setGroupDirectionCounter(0);
