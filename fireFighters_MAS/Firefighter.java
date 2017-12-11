@@ -135,14 +135,11 @@ public class Firefighter {
 		if (!Tools.isAtTick(stepSchedule.getNextTime())) {
 			return;
 		} // Execute only at the specified ticks
-		
 		if (!context.contains(this)) {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
-
-<<<<<<< HEAD
-=======
+		
 		// See if you received new bounty
 		if (knowledge.getNewBounty() > 0) {
 			bounty = bounty + knowledge.getNewBounty();
@@ -153,7 +150,6 @@ public class Firefighter {
 		// increases a score for each known fire by 1
 		knowledge.increaseFireScore();
 
->>>>>>> a327d2026aee402d5951619a92f85e38791077a2
 		// Form Group
 		if (atGroupLocation && !foundGroup) {
 			formGroup();
@@ -183,30 +179,11 @@ public class Firefighter {
 				return;
 			}
 
-<<<<<<< HEAD
 		// Action part (takes one step)
 		
 		//if foundGroup == true
 			//if knowledge.getcurrenttask() == null
 				//decide for a direction to go for the group
-		if (foundGroup == true) {
-			if (knowledge.getCurrentTask() == null) {
-				if (knowledge.getGroupDirectionCounter() >= 5) {
-					double GroupDirection = RandomHelper.nextDoubleFromTo(0, 360);
-					knowledge.setGroupDirection(GroupDirection);
-					knowledge.setGroupDirectionCounter(0);
-					//send Group the new direction and the new directioncounter
-					sendMessage(TransmissionMethod.Radio ,new ArrayList<GridPoint>(knowledge.getMyGroup().values()) , MessageType.GROUPDIRECTION);
-					System.out.println("new direction");
-				}
-				else {
-					tryToMove(knowledge.getGroupDirection());
-					knowledge.setGroupDirectionCounter(knowledge.getGroupDirectionCounter() +1);
-					
-				}
-			}
-		}
-		
 		
 		
 		boolean checkWeather = false;
@@ -220,31 +197,27 @@ public class Firefighter {
 			if (oldWindVelocity == null || oldWindVelocity.direction != windVelocity.direction
 					|| oldWindVelocity.speed != windVelocity.speed) {
 				windUpdate = true;
-=======
-			// Action part (takes one step)
-			boolean checkWeather = false;
-
-			if (knowledge.getFire(myPos) > 0) {
-				runOutOfFire(); // If firefighter knows that he is standing in the fire
-			} else if (checkWeather) {
-				Velocity oldWindVelocity = knowledge.getWindVelocity();
-				checkWeather();
-				Velocity windVelocity = knowledge.getWindVelocity();
-				if (oldWindVelocity == null || oldWindVelocity.direction != windVelocity.direction
-						|| oldWindVelocity.speed != windVelocity.speed) {
-					windUpdate = true;
-				}
-			} else {
-				moveOrExtinguish(); // includes moving to task location
->>>>>>> a327d2026aee402d5951619a92f85e38791077a2
 			}
+		} else {
+			if (foundGroup == true) {
+				if (knowledge.getCurrentTask() == null) {
+					if (knowledge.getGroupDirectionCounter() >= 5) {
+						double GroupDirection = RandomHelper.nextDoubleFromTo(0, 360);
+						knowledge.setGroupDirection(GroupDirection);
+						knowledge.setGroupDirectionCounter(0);
+						//send Group the new direction and the new directioncounter
+						sendMessage(TransmissionMethod.Radio ,new ArrayList<GridPoint>(knowledge.getMyGroup().values()) , MessageType.GROUPDIRECTION);
+						System.out.println("HAAAAAAAAAAAAAAAAAAAAAAAAAAAALLO");
+					}
+					else {
+						tryToMove(knowledge.getGroupDirection());
+						knowledge.setGroupDirectionCounter(knowledge.getGroupDirectionCounter() +1);
+						
+					}
+				}else moveOrExtinguish(); //includes moving to task location
+			}else moveOrExtinguish();
 		}
-<<<<<<< HEAD
-		
-
-		
-=======
->>>>>>> a327d2026aee402d5951619a92f85e38791077a2
+	}
 		// Update own location
 		myPos = grid.getLocation(this);
 		// Add myself into my knowledge and update the location
@@ -372,12 +345,8 @@ public class Firefighter {
 	 */
 	private boolean tryToMove(double pDir) {
 		GridPoint myPos = grid.getLocation(this);
-<<<<<<< HEAD
-		if (!foundGroup && atGroupLocation)
-=======
 		// Don't move in case of group forming
 		if (myFirstStep || mySecondStep)
->>>>>>> a327d2026aee402d5951619a92f85e38791077a2
 			return false;
 		for (int i = 0; i < 8; i++) {
 			GridPoint newPos = Tools.dirToCoord(pDir + (i % 2 == 0 ? -i * 45 : i * 45), myPos);
