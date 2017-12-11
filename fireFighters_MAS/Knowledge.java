@@ -43,8 +43,8 @@ public class Knowledge {
 	private int radioDistance;
 	private GridPoint radioDistPosition;
 	private int newBounty;
-	private double GroupDirection;
-	private int GroupDirectionCounter;
+	private double GroupDirection = 0;
+	private int GroupDirectionCounter = 10; //needs to be bigger than 5 to start 
 
 
 	/** Custom constructor */
@@ -62,11 +62,11 @@ public class Knowledge {
 	}
 
 	public int getGroupDirectionCounter() {
-		return GroupDirectionCounter;
+		return this.GroupDirectionCounter;
 	}
 
 	public void setGroupDirectionCounter(int groupDirectionCounter) {
-		GroupDirectionCounter = groupDirectionCounter;
+		this.GroupDirectionCounter = groupDirectionCounter;
 	}
 	
 	public void setGroupDirection(double GroupDirection) {
@@ -593,7 +593,6 @@ public class Knowledge {
 			}
 			if (arr2[0].equals("GD")) {
 				setGroupDirection(Double.parseDouble(arr2[1])); 
-				setGroupDirectionCounter(Integer.parseInt(arr2[2]));
 			}
 		}
 	}
@@ -628,6 +627,18 @@ public class Knowledge {
 		if (k.getCurrentTask() != null) {
 			setCurrentTask(k.getCurrentTask());
 		}
+		if (k.getGroupDirection() != 0) {
+			if (k.getGroupDirection() != GroupDirection) {
+		GroupDirection = k.getGroupDirection();
+		GroupDirectionCounter = 0;
+		}}
+		/*if (k.getGroupDirection() != getGroupDirection()) {
+			setGroupDirection(k.getGroupDirection());
+			setGroupDirectionCounter(0);
+		}*/
+		
+		
+		
 		this.windVelocity = k.windVelocity;
 
 		newBounty = newBounty + k.getNewBounty();
