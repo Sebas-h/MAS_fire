@@ -591,6 +591,10 @@ public class Knowledge {
 			if (arr2[0].equals("W")) {
 				windVelocity = new Velocity(Double.parseDouble(arr2[1]), Double.parseDouble(arr2[1]));
 			}
+			if (arr2[0].equals("GD")) {
+				setGroupDirection(Double.parseDouble(arr2[1])); 
+				setGroupDirectionCounter(Integer.parseInt(arr2[2]));
+			}
 		}
 	}
 

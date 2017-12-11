@@ -181,10 +181,6 @@ public class Firefighter {
 
 		// Action part (takes one step)
 		
-		//if foundGroup == true
-			//if knowledge.getcurrenttask() == null
-				//decide for a direction to go for the group
-		
 		
 		boolean checkWeather = false;
 
@@ -207,7 +203,6 @@ public class Firefighter {
 						knowledge.setGroupDirectionCounter(0);
 						//send Group the new direction and the new directioncounter
 						sendMessage(TransmissionMethod.Radio ,new ArrayList<GridPoint>(knowledge.getMyGroup().values()) , MessageType.GROUPDIRECTION);
-						System.out.println("HAAAAAAAAAAAAAAAAAAAAAAAAAAAALLO");
 					}
 					else {
 						tryToMove(knowledge.getGroupDirection());
@@ -710,7 +705,7 @@ public class Firefighter {
 			message.setContent("B " + bountyToBeSent);
 			break;
 		case GROUPDIRECTION:
-			message.setContent("GD" + knowledge.getGroupDirection());
+			message.setContent("GD " + knowledge.getGroupDirection() + " " + knowledge.getGroupDirectionCounter());
 		default:
 			break;
 		}
@@ -760,6 +755,7 @@ public class Firefighter {
 						((IGlobalCounter) context.getObjects(RadioMsgCounter.class).get(0)).incrementCounter();
 						((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0))
 								.addMessage(message.getContent());
+						
 					}
 				}
 			}
