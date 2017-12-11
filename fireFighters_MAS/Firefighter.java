@@ -198,16 +198,15 @@ public class Firefighter {
 			if (foundGroup == true) {
 				if (knowledge.getCurrentTask() == null) {
 					if (knowledge.getGroupDirectionCounter() >= 5) {
-						double GroupDirection = RandomHelper.nextDoubleFromTo(0, 360);
+						double GroupDirection = RandomHelper.nextDoubleFromTo(1, 360);
 						knowledge.setGroupDirection(GroupDirection);
 						knowledge.setGroupDirectionCounter(0);
-						//send Group the new direction and the new directioncounter
+						//send Group the new direction
 						sendMessage(TransmissionMethod.Radio ,new ArrayList<GridPoint>(knowledge.getMyGroup().values()) , MessageType.GROUPDIRECTION);
 					}
 					else {
 						tryToMove(knowledge.getGroupDirection());
 						knowledge.setGroupDirectionCounter(knowledge.getGroupDirectionCounter() +1);
-						
 					}
 				}else moveOrExtinguish(); //includes moving to task location
 			}else moveOrExtinguish();
@@ -705,7 +704,7 @@ public class Firefighter {
 			message.setContent("B " + bountyToBeSent);
 			break;
 		case GROUPDIRECTION:
-			message.setContent("GD " + knowledge.getGroupDirection() + " " + knowledge.getGroupDirectionCounter());
+			message.setContent("GD " + knowledge.getGroupDirection());
 		default:
 			break;
 		}
