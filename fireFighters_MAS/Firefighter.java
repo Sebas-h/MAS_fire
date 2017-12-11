@@ -247,6 +247,31 @@ public class Firefighter {
 		// if (atGroupLocation) System.out.print("Firefighter is at group location");
 		// System.out.println("");
 	}
+	
+	/**
+	 * Negotiate with other firefighter within a group about who checking weather
+	 */
+	private void negotiateWeatherCheck() {
+		// get group number
+		// get all other firefighters in my group
+		// formulate an offer to make to group members (i.e. I will give you x bounty if you check weather for me)
+		// send the offer to your group members
+		
+		/*
+		 * we need to add a property to knowledge that contains an offer made,
+		 * in the step function the ff needs to check this property and evaluate whether to accept or not and 
+		 * subsequently make this field in his knowledge empty again (null)
+		 * if he accepts he sends it back to the ff that gave the offer
+		 * 
+		 * the next step the ff that gave the offer will choose the first ff in its knowledge to accept it and 
+		 * sends to a msg to this ff that the offer is accepted. He sends rejected to the other (or nothing,
+		 * which means rejection)
+		 * When the ff that accepted the offer can check his knowledge again a sees that it has been 
+		 * accepted he will check weather and send the info to the rest of the group
+		 * 
+		 * [Does this seems right to you? Maybe to much messaging?]
+		 */
+	}
 
 	/**
 	 * Executes task; either moving closer to task destination or extinguishing fire
