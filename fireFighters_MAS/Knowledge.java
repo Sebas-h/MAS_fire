@@ -43,6 +43,9 @@ public class Knowledge {
 	private int radioDistance;
 	private GridPoint radioDistPosition;
 	private int newBounty;
+	private double GroupDirection;
+	private int GroupDirectionCounter;
+
 
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
@@ -58,10 +61,26 @@ public class Knowledge {
 		this.newBounty = 0;
 	}
 
+	public int getGroupDirectionCounter() {
+		return GroupDirectionCounter;
+	}
+
+	public void setGroupDirectionCounter(int groupDirectionCounter) {
+		GroupDirectionCounter = groupDirectionCounter;
+	}
+	
+	public void setGroupDirection(double GroupDirection) {
+		this.GroupDirection = GroupDirection;
+	}
+	
+	public double getGroupDirection() {
+		return this.GroupDirection;
+	}
+	
 	public GridPoint getCurrentTask() {
 		return this.currentTask;
 	}
-
+	
 	public void setCurrentTask(GridPoint currentTask) {
 		this.currentTask = currentTask;
 	}
@@ -276,6 +295,9 @@ public class Knowledge {
 			// Update position in case he moved without noticing
 			if (id.equals(ID)) {
 				firefighterKnowledge.put(ID, pos);
+				for (Integer groupID : myGroup.keySet()) {
+					if (groupID.equals(ID)) myGroup.put(groupID, pos);
+				}
 				return false;
 			}
 		}

@@ -135,26 +135,14 @@ public class Firefighter {
 		if (!Tools.isAtTick(stepSchedule.getNextTime())) {
 			return;
 		} // Execute only at the specified ticks
-
+		
 		if (!context.contains(this)) {
 			return;
 		} // Safety
 		GridPoint myPos = grid.getLocation(this);
 
-		// Form Group
-
-		if (atGroupLocation && !foundGroup) {
-			formGroup();
-			if (knowledge.getMyGroup() != null && knowledge.getMyGroup().size() == (peopleInMyGroup - 1)) {
-				foundGroup = true;
-				knowledge.addToMyGroup(myPos, id);
-				// System.out.println("Group " + myGroupNumber + " complete at tick
-				// "+stepSchedule.getNextTime());
-				// System.out.println("Firefighter "+id+" has "+bounty+" bounty");
-			}
-
-		}
-
+<<<<<<< HEAD
+=======
 		// See if you received new bounty
 		if (knowledge.getNewBounty() > 0) {
 			bounty = bounty + knowledge.getNewBounty();
@@ -165,16 +153,62 @@ public class Firefighter {
 		// increases a score for each known fire by 1
 		knowledge.increaseFireScore();
 
-		if (checkSurroundedByFire()) // If caught by fire, die
-		{
-			// Tell people that I am dead
-			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()),
-					MessageType.BYE);
-			decreaseLifePoints(lifePoints);
-			return;
-		}
+>>>>>>> a327d2026aee402d5951619a92f85e38791077a2
+		// Form Group
+		if (atGroupLocation && !foundGroup) {
+			formGroup();
+			if (knowledge.getMyGroup() != null && knowledge.getMyGroup().size() == (peopleInMyGroup - 1)) {
+				for (int groupID : knowledge.getMyGroup().keySet()) {
+					GridPoint destination = knowledge.getMyGroup().get(groupID);
+					sendMessage(getTransmissionMethode(destination),
+							new ArrayList<GridPoint>(Arrays.asList(destination)), MessageType.POSITION);
+				}
+				// System.out.println("Group "+myGroupNumber+" Firefighter "+id+" found his
+				// group");
+				foundGroup = true;
+				knowledge.addToMyGroup(myPos, id);
+				// System.out.println("Group " + myGroupNumber + " complete at tick
+				// "+stepSchedule.getNextTime());
+				// System.out.println("Firefighter "+id+" has "+bounty+" bounty");
+			}
 
+		} else {
+
+			if (checkSurroundedByFire()) // If caught by fire, die
+			{
+				// Tell people that I am dead
+				sendMessage(TransmissionMethod.Satellite,
+						new ArrayList<GridPoint>(knowledge.getAllFirefighters().values()), MessageType.BYE);
+				decreaseLifePoints(lifePoints);
+				return;
+			}
+
+<<<<<<< HEAD
 		// Action part (takes one step)
+		
+		//if foundGroup == true
+			//if knowledge.getcurrenttask() == null
+				//decide for a direction to go for the group
+		if (foundGroup == true) {
+			if (knowledge.getCurrentTask() == null) {
+				if (knowledge.getGroupDirectionCounter() >= 5) {
+					double GroupDirection = RandomHelper.nextDoubleFromTo(0, 360);
+					knowledge.setGroupDirection(GroupDirection);
+					knowledge.setGroupDirectionCounter(0);
+					//send Group the new direction and the new directioncounter
+					sendMessage(TransmissionMethod.Radio ,new ArrayList<GridPoint>(knowledge.getMyGroup().values()) , MessageType.GROUPDIRECTION);
+					System.out.println("new direction");
+				}
+				else {
+					tryToMove(knowledge.getGroupDirection());
+					knowledge.setGroupDirectionCounter(knowledge.getGroupDirectionCounter() +1);
+					
+				}
+			}
+		}
+		
+		
+		
 		boolean checkWeather = false;
 
 		if (knowledge.getFire(myPos) > 0) {
@@ -186,11 +220,31 @@ public class Firefighter {
 			if (oldWindVelocity == null || oldWindVelocity.direction != windVelocity.direction
 					|| oldWindVelocity.speed != windVelocity.speed) {
 				windUpdate = true;
-			}
-		} else {
-			moveOrExtinguish(); // includes moving to task location
-		}
+=======
+			// Action part (takes one step)
+			boolean checkWeather = false;
 
+			if (knowledge.getFire(myPos) > 0) {
+				runOutOfFire(); // If firefighter knows that he is standing in the fire
+			} else if (checkWeather) {
+				Velocity oldWindVelocity = knowledge.getWindVelocity();
+				checkWeather();
+				Velocity windVelocity = knowledge.getWindVelocity();
+				if (oldWindVelocity == null || oldWindVelocity.direction != windVelocity.direction
+						|| oldWindVelocity.speed != windVelocity.speed) {
+					windUpdate = true;
+				}
+			} else {
+				moveOrExtinguish(); // includes moving to task location
+>>>>>>> a327d2026aee402d5951619a92f85e38791077a2
+			}
+		}
+<<<<<<< HEAD
+		
+
+		
+=======
+>>>>>>> a327d2026aee402d5951619a92f85e38791077a2
 		// Update own location
 		myPos = grid.getLocation(this);
 		// Add myself into my knowledge and update the location
@@ -212,7 +266,18 @@ public class Firefighter {
 		// Update sighterFirefightersLastStep
 		sightedFirefightersLastStep = sightedFirefighters;
 
-		// Let algorithm know that the next step is your second step
+		if (moved) {
+			for (int groupID : knowledge.getMyGroup().keySet()) {
+				GridPoint destination = knowledge.getMyGroup().get(groupID);
+				sendMessage(getTransmissionMethode(destination), new ArrayList<GridPoint>(Arrays.asList(destination)),
+						MessageType.POSITION);
+			}
+			moved = false;
+		}
+		// System.out.print("Firefighter "+id);
+		// if (foundGroup) System.out.print("Firefighter found group and ");
+		// if (atGroupLocation) System.out.print("Firefighter is at group location");
+		// System.out.println("");
 	}
 
 	/**
@@ -307,7 +372,12 @@ public class Firefighter {
 	 */
 	private boolean tryToMove(double pDir) {
 		GridPoint myPos = grid.getLocation(this);
-		if (knowledge.getCurrentTask() == null)
+<<<<<<< HEAD
+		if (!foundGroup && atGroupLocation)
+=======
+		// Don't move in case of group forming
+		if (myFirstStep || mySecondStep)
+>>>>>>> a327d2026aee402d5951619a92f85e38791077a2
 			return false;
 		for (int i = 0; i < 8; i++) {
 			GridPoint newPos = Tools.dirToCoord(pDir + (i % 2 == 0 ? -i * 45 : i * 45), myPos);
@@ -420,8 +490,8 @@ public class Firefighter {
 		boolean hasFirefighter = false;
 
 		// Check the grid points surrounding the group location
-		for (int i = -1; i <= 1; i++) {
-			for (int j = -1; j <= 1; j++) {
+		for (int i = -sightRange; i <= sightRange; i++) {
+			for (int j = -sightRange; j <= sightRange; j++) {
 				// don't check the group location
 				if (i != 0 || j != 0) {
 					analysePos = new GridPoint(groupLocation.getX() + i, groupLocation.getY() + j);
@@ -437,6 +507,9 @@ public class Firefighter {
 							// Check if I know a firefighter on this location that belongs to my group
 							if (myGroupNumber == (ID % numberOfGroups) && friends.get(ID).equals(analysePos)) {
 								// add him to my group
+								// System.out.println("Group "+myGroupNumber+" Firefighter "+id+" added
+								// firefighter "+ID+" to his group"+" GroupLocation"+groupLocation+" my location
+								// "+ grid.getLocation(this));
 								knowledge.addToMyGroup(analysePos, ID);
 							}
 						}
@@ -444,6 +517,7 @@ public class Firefighter {
 						sendMessage(TransmissionMethod.Radio, new ArrayList<GridPoint>(Arrays.asList(analysePos)),
 								MessageType.POSITION);
 					}
+
 				}
 
 			}
@@ -666,6 +740,8 @@ public class Firefighter {
 		case BOUNTY:
 			message.setContent("B " + bountyToBeSent);
 			break;
+		case GROUPDIRECTION:
+			message.setContent("GD" + knowledge.getGroupDirection());
 		default:
 			break;
 		}
