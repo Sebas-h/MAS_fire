@@ -93,7 +93,7 @@ public class Firefighter {
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		// Initialize local variables
 		this.context = context;
-		//waitSteps=60;
+		// waitSteps=60;
 		this.grid = grid;
 		this.id = id;
 		this.role = Role.Alone;
@@ -136,10 +136,10 @@ public class Firefighter {
 	/** A step method of the firefighter */
 	@ScheduledMethod(shuffle = false) // Prevent call order shuffling
 	public void step() {
-		//if(waitSteps!=0) {
-		//	waitSteps--;
-		//	return;
-		//}
+		// if(waitSteps!=0) {
+		// waitSteps--;
+		// return;
+		// }
 		if (!Tools.isAtTick(stepSchedule.getNextTime())) {
 			return;
 		} // Execute only at the specified ticks
@@ -153,6 +153,7 @@ public class Firefighter {
 			bounty = bounty + knowledge.getNewBounty();
 			knowledge.setNewBounty(0);
 		}
+		System.out.println("Firefighter " + id + " has " + bounty + " Bounty.");
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
 		// increases a score for each known fire by 1
@@ -872,9 +873,9 @@ public class Firefighter {
 			int sender = Integer.parseInt(content[4]);
 			boolean accepted = true;
 			// TODO decide when to accept
-			//if (knowledge.getCurrentTask() != null) {
-			//	accepted = false;
-			//}
+			// if (knowledge.getCurrentTask() != null) {
+			// accepted = false;
+			// }
 			if (accepted) {
 				knowledge.setCurrentTask(position);
 				ArrayList<GridPoint> receiver = new ArrayList<>();
@@ -1005,8 +1006,8 @@ public class Firefighter {
 		 */
 
 		if (maxvalue > 5) {
-			System.out.println(bounty);
-			
+			// System.out.println(bounty);
+
 			if (bounty > 140) {
 				lastBountyOffer = (int) (bounty * 0.08 / peopleInMyGroup);
 				sendTask(highscore, lastBountyOffer);

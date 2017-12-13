@@ -44,8 +44,7 @@ public class Knowledge {
 	private GridPoint radioDistPosition;
 	private int newBounty;
 	private double GroupDirection = 0;
-	private int GroupDirectionCounter = 10; //needs to be bigger than 5 to start 
-
+	private int GroupDirectionCounter = 10; // needs to be bigger than 5 to start
 
 	/** Custom constructor */
 	public Knowledge(Context<Object> context) {
@@ -55,7 +54,8 @@ public class Knowledge {
 		this.firefighterKnowledge = new LinkedHashMap<Integer, GridPoint>();
 		this.rainKnowledge = new LinkedHashMap<GridPoint, Boolean>();
 		this.givenTasks = new LinkedHashMap<Integer, GridPoint>();
-		this.myGroup = new LinkedHashMap<Integer,GridPoint>();
+		this.myGroup = new LinkedHashMap<Integer, GridPoint>();
+		this.deadFirefighterKnowledge = new ArrayList<Integer>();
 		this.windVelocity = null;
 		this.context = context;
 		this.newBounty = 0;
@@ -68,19 +68,19 @@ public class Knowledge {
 	public void setGroupDirectionCounter(int groupDirectionCounter) {
 		this.GroupDirectionCounter = groupDirectionCounter;
 	}
-	
+
 	public void setGroupDirection(double GroupDirection) {
 		this.GroupDirection = GroupDirection;
 	}
-	
+
 	public double getGroupDirection() {
 		return this.GroupDirection;
 	}
-	
+
 	public GridPoint getCurrentTask() {
 		return this.currentTask;
 	}
-	
+
 	public void setCurrentTask(GridPoint currentTask) {
 		this.currentTask = currentTask;
 	}
@@ -230,6 +230,22 @@ public class Knowledge {
 	}
 
 	/**
+	 * Adds dead firefighter to the list in the knowledge
+	 * 
+	 * @param ID
+	 *            of the firefighter
+	 * @return false if firefighter already is dead in the knowledge, else true
+	 */
+
+	public boolean addDeadFirefighter(int ID) {
+		if (deadFirefighterKnowledge.contains(ID))
+			return false;
+		else
+			deadFirefighterKnowledge.add(ID);
+		return true;
+	}
+
+	/**
 	 * Add the information that there is no more forest on a gridpoint
 	 * 
 	 * @param pos
@@ -296,7 +312,8 @@ public class Knowledge {
 			if (id.equals(ID)) {
 				firefighterKnowledge.put(ID, pos);
 				for (Integer groupID : myGroup.keySet()) {
-					if (groupID.equals(ID)) myGroup.put(groupID, pos);
+					if (groupID.equals(ID))
+						myGroup.put(groupID, pos);
 				}
 				return false;
 			}
@@ -315,19 +332,17 @@ public class Knowledge {
 	 * @return
 	 */
 	public boolean addToMyGroup(GridPoint pos, Integer ID) {
-			for (Integer id : myGroup.keySet()) {
-				// Update position in case he moved without noticing
-				if (id.equals(ID)) {
-					myGroup.put(ID, pos);
-					return false;
-				}
+		for (Integer id : myGroup.keySet()) {
+			// Update position in case he moved without noticing
+			if (id.equals(ID)) {
+				myGroup.put(ID, pos);
+				return false;
 			}
+		}
 		myGroup.put(ID, pos);
 		return true;
 	}
 
-
-	
 	public HashMap<Integer, GridPoint> getMyGroup() {
 		HashMap<Integer, GridPoint> returnHashMap = new HashMap<Integer, GridPoint>();
 
@@ -578,8 +593,8 @@ public class Knowledge {
 						Integer.parseInt(arr2[3]));
 			}
 			if (arr2[0].equals("DF")) {
+				addDeadFirefighter(Integer.parseInt(arr2[1]));
 				removeFirefighter(Integer.parseInt(arr2[1]));
-				deadFirefighterKnowledge.add(Integer.parseInt(arr2[1]));
 			}
 
 			if (arr2[0].equals("T")) {
@@ -592,7 +607,7 @@ public class Knowledge {
 				windVelocity = new Velocity(Double.parseDouble(arr2[1]), Double.parseDouble(arr2[1]));
 			}
 			if (arr2[0].equals("GD")) {
-				setGroupDirection(Double.parseDouble(arr2[1])); 
+				setGroupDirection(Double.parseDouble(arr2[1]));
 			}
 		}
 	}
@@ -629,16 +644,15 @@ public class Knowledge {
 		}
 		if (k.getGroupDirection() != 0) {
 			if (k.getGroupDirection() != GroupDirection) {
-		GroupDirection = k.getGroupDirection();
-		GroupDirectionCounter = 0;
-		}}
-		/*if (k.getGroupDirection() != getGroupDirection()) {
-			setGroupDirection(k.getGroupDirection());
-			setGroupDirectionCounter(0);
-		}*/
-		
-		
-		
+				GroupDirection = k.getGroupDirection();
+				GroupDirectionCounter = 0;
+			}
+		}
+		/*
+		 * if (k.getGroupDirection() != getGroupDirection()) {
+		 * setGroupDirection(k.getGroupDirection()); setGroupDirectionCounter(0); }
+		 */
+
 		this.windVelocity = k.windVelocity;
 
 		newBounty = newBounty + k.getNewBounty();
