@@ -76,6 +76,8 @@ public class Firefighter {
 	boolean mySecondStep;
 	int waitSteps;
 	int stepsSinceLastUpdate = 0;
+	int numleaders;
+	int numteams;
 	Integer leader;
 	Integer oldleader;
 
@@ -118,6 +120,8 @@ public class Firefighter {
 		sightRange = params.getInteger("firefighter_sight_range");
 		radioDist = params.getInteger("firefighter_radio_range");
 		bounty = params.getInteger("firefighter_initial_bounty");
+		numleaders = params.getInteger("firefighter_num_leaders");
+		numteams = params.getInteger("firefighter_num_teams");
 		double initialSpeed = params.getDouble("firefighter_initial_speed");
 		double initialSpeedDeviation = params.getDouble("firefighter_initial_speed_deviation");
 		velocity = new Velocity(RandomHelper.nextDoubleFromTo(initialSpeed - initialSpeedDeviation,
@@ -149,6 +153,47 @@ public class Firefighter {
 		if (knowledge.getNewBounty() > 0) {
 			bounty = bounty + knowledge.getNewBounty();
 			knowledge.setNewBounty(0);
+		}
+		
+		
+		switch (numleaders) {
+		case 0:
+			switch(numteams) {
+			case 1: //Decentralized cooperateon 
+				
+				break;
+				
+			case 2: //Competing decentralized teams
+				
+				break;
+			default:
+				break;
+			}
+			break;
+		case 1:
+			switch(numteams) {
+			case 1: //Centralized cooperation
+				
+				break;
+				
+			case 2:  //Semi-centralized cooperating teams
+				
+				break;
+			default:
+				break;
+			}
+			break;			
+		case 2:
+			switch(numteams) {
+			case 2:// Competing centralized teams
+				
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
 		}
 
 		if (!myFirstStep) {
