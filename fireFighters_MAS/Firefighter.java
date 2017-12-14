@@ -150,8 +150,11 @@ public class Firefighter {
 			bounty = bounty + knowledge.getNewBounty();
 			knowledge.setNewBounty(0);
 		}
-
-		System.out.println("Firefighter " + id + " has " + bounty + " Bounty.");
+		
+		if (!myFirstStep) {
+			assignRole();
+			System.out.println("Firefighter " + id + " is "+role.toString()+" has " + bounty + " Bounty.");
+		}
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
 		// increases a score for each known fire by 1
@@ -167,9 +170,15 @@ public class Firefighter {
 		}
 
 		// Action part (takes one step)
-
+		
+		//No follower checks weather
+		//Leader checks weather if he is safe from fire
 		boolean checkWeather = false;
-
+		if (role == Role.Leader) {
+			double[] firedirection = findDirection2NearestFire();
+			if (firedirection[1]<sightRange) tryToMove(firedirection[0]+180); 
+			else checkWeather = true;
+		}
 		if (knowledge.getFire(myPos) > 0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
 		} else if (checkWeather) {
@@ -191,6 +200,45 @@ public class Firefighter {
 			// Send everybody your location and ID in case it is the first step
 			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.POSITION);
 			myFirstStep = false;
+		} else {
+			// Communicating to Follower and Leader
+			if (role == Role.Follower) {
+				ArrayList<GridPoint> leaderloc = new ArrayList<GridPoint>(
+						Arrays.asList(knowledge.getFirefighter(leader)));
+				//Choose between Radio and Satellite
+				TransmissionMethod leaderMethod = TransmissionMethod.Satellite;
+				if (Tools.getDistance(myPos, knowledge.getFirefighter(leader))<=this.radioDist) leaderMethod = TransmissionMethod.Radio;
+				// Send leader what I can see if I see new things
+				if (newInfo)
+					sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
+					newInfo= false;
+				if (moved)
+					sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
+				
+			} else if (role == Role.Leader) {
+				//Get location of followers
+				HashMap<Integer,GridPoint> followers = knowledge.getAllFirefighters();
+				followers.remove(id);
+				// Send each follower specific task and my position in case I moved
+				for (int followerID : followers.keySet()) {
+					GridPoint destination = followers.get(followerID);
+					ArrayList<GridPoint> destinationList = new ArrayList<GridPoint>(Arrays.asList(destination));
+					if (moved)
+						sendMessage(getTransmissionMethode(destination), destinationList, MessageType.POSITION);
+					TaskToGive = evaluate(followerID);
+
+					if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
+						sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
+						knowledge.addTask(followerID, TaskToGive);
+						tasksSent++;
+					}
+				}
+				// Send wind update
+				if (windUpdate && !knowledge.getAllFire().isEmpty()) {
+					//Send Global Message to everyone
+					sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.WIND);
+				}
+			}
 		}
 
 		// Set newknowledge to zero
@@ -693,13 +741,12 @@ public class Firefighter {
 		}
 		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
 				.getObjects(IndividualMessageCounter.class).get(0));
-
+		
+		System.out.println("Message -"+message.getContent()+" -from "+id);
 		if (transmissionMethod == TransmissionMethod.Radio)
 			sendLocalMessage(recipientLocations, message);
 		else
 			sendGlobalMessage(message);
-
-		newInfo = false; // All the new information was sent, over now
 	}
 
 	/**
