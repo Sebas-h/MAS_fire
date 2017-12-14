@@ -517,8 +517,8 @@ public class Knowledge {
 		for (GridPoint pos : getAllFire()) {
 			str += "F " + pos.getX() + " " + pos.getY() + ";";
 		}
-		for (Map.Entry<Integer, GridPoint> entry : firefighterKnowledge.entrySet()) {
-			str += "FF " + entry.getValue().getX() + " " + entry.getValue().getY() + " " + entry.getKey() + ";";
+		for (GridPoint pos : getAllBurnedForest()) {
+				str += "NF " + pos.getX() + " " + pos.getY() + ";";
 		}
 		return str;
 	}

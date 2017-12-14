@@ -69,13 +69,13 @@ public class Firefighter {
 	boolean atGroupLocation;
 	boolean foundGroup;
 	int radioDist;
-	GridPoint TaskToGive;
+	Task TaskToGive;
 	boolean windUpdate = false;
 	boolean moved = false;
 	boolean myFirstStep;
 	boolean mySecondStep;
 	int waitSteps;
-
+	int stepsSinceLastUpdate = 0;
 	Integer leader;
 	Integer oldleader;
 
@@ -212,24 +212,26 @@ public class Firefighter {
 				if (newInfo)
 					sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
 					newInfo= false;
-				if (moved)
+				stepsSinceLastUpdate++;
+				if (moved&&stepsSinceLastUpdate>5)
 					sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
+				stepsSinceLastUpdate=0;
 				
 			} else if (role == Role.Leader) {
+				//Give followers your position in case you ran away from fire
+				if (moved) sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(), MessageType.POSITION);
 				//Get location of followers
 				HashMap<Integer,GridPoint> followers = knowledge.getAllFirefighters();
 				followers.remove(id);
-				// Send each follower specific task and my position in case I moved
+				// Send each follower specific task
 				for (int followerID : followers.keySet()) {
 					GridPoint destination = followers.get(followerID);
 					ArrayList<GridPoint> destinationList = new ArrayList<GridPoint>(Arrays.asList(destination));
-					if (moved)
-						sendMessage(getTransmissionMethode(destination), destinationList, MessageType.POSITION);
 					TaskToGive = evaluate(followerID);
-
 					if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
-						sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
-						knowledge.addTask(followerID, TaskToGive);
+						if (TaskToGive.getGridPoint()!=null)
+								sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
+						knowledge.addTask(TaskToGive.getReceiverID(), TaskToGive.getGridPoint());
 						tasksSent++;
 					}
 				}
@@ -674,7 +676,6 @@ public class Firefighter {
 				newInfo = true;
 			}
 		}
-		newInfo = true;
 	}
 
 	/**
@@ -705,7 +706,7 @@ public class Firefighter {
 			break;
 		case ISEENEW:
 			// Update leader only with stuff that is new!
-			message.setContent(this.newknowledge.WhatIsee2String(myPos, sightRange));
+			message.setContent(this.newknowledge.convert2String());
 			break;
 		case ISEE:
 			// Update leader only with stuff that is new!
@@ -721,7 +722,7 @@ public class Firefighter {
 			message.setContent("DF " + id);
 			break;
 		case TASK:
-			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY());
+			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY() + " "+TaskToGive.getReceiverID() + " "+TaskToGive.getSenderID());
 			break;
 		case WIND:
 			if (knowledge.getWindVelocity() == null) {
@@ -775,7 +776,7 @@ public class Firefighter {
 																				// recipient is within range
 				{
 					if (getBounty() >= messageCost) {
-						recipient.recieveMessage(message); // Deliver message
+						recipient.receiveMessage(message); // Deliver message
 						bounty -= messageCost; // Pay for the message
 						// System.out.println("Firefighter "+id+" spend "+messageCost+" bounty on a
 						// local message");
@@ -833,7 +834,7 @@ public class Firefighter {
 		for (Firefighter recipient : allFirefighters) {
 			if (recipient != null) // First of all check if the recipient is there at all
 			{
-				recipient.recieveMessage(message); // Deliver message
+				recipient.receiveMessage(message); // Deliver message
 			}
 		}
 		newInfo = false; // All the new information was sent, over now
@@ -845,13 +846,14 @@ public class Firefighter {
 	 * @param message
 	 *            - a message
 	 */
-	public void recieveMessage(Message message) {
+	public void receiveMessage(Message message) {
 		if (message.getContent().charAt(0) == 'T') {
 			// incoming task: ("T" + " " + highscore.getX() + "" + highscore.getY() + " " +
 			// reward + " " + this.id);
 			String[] content = message.getContent().split(" ");
 			GridPoint position = new GridPoint(Integer.parseInt(content[1]), Integer.parseInt(content[2]));
-			int reward = Integer.parseInt(content[3]);
+			Integer id = Integer.parseInt(content[3]);
+			//int reward = Integer.parseInt(content[3]);
 			int sender = Integer.parseInt(content[4]);
 			boolean accepted = true;
 			// TODO decide when to accept
@@ -864,7 +866,7 @@ public class Firefighter {
 				receiver.add(knowledge.getAllFirefighters().get(sender));
 				Message m = new Message();
 				m.setContent("A " + this.id);
-				sendLocalMessage(receiver, m);
+				//sendLocalMessage(receiver, m);
 			}
 		} else if (message.getContent().charAt(0) == 'A') {
 			String[] content = message.getContent().split(" ");
@@ -902,7 +904,7 @@ public class Firefighter {
 	 *            current firefighter
 	 * @return next Task
 	 */
-	private GridPoint evaluate(int id) {
+	private Task evaluate(int id) {
 
 		// TODO add a border if the fire is known for more than x it does not make sense
 		// to move there
@@ -986,20 +988,20 @@ public class Firefighter {
 		 * 
 		 * } } }
 		 */
-
+		Task TaskToGive = new Task(highscore,lastBountyOffer,this.id,id);
 		if (maxvalue > 5) {
 			// System.out.println(bounty);
 
 			if (bounty > 140) {
 				lastBountyOffer = (int) (bounty * 0.08 / peopleInMyGroup);
-				sendTask(highscore, lastBountyOffer);
+				//sendTask(TaskToGive);
 			}
 
 		}
-		return highscore;
+		return TaskToGive;
 	}
 
-	public void sendTask(GridPoint highscore, int reward) {
+	public void sendTask(Task task) {
 		ArrayList<GridPoint> recipientList = new ArrayList<>();
 		for (int groupID : knowledge.getMyGroup().keySet()) {
 			GridPoint destination = knowledge.getMyGroup().get(groupID);
@@ -1009,7 +1011,7 @@ public class Firefighter {
 		}
 		if (recipientList.size() != 0) {
 			Message m = new Message();
-			m.setContent("T" + " " + highscore.getX() + " " + highscore.getY() + " " + reward + " " + this.id);
+			m.setContent("T" + " " + task.getX() + " " + task.getY() + " " + task.getReward() + " " + this.id);
 			sendLocalMessage(recipientList, m);
 		}
 	}
