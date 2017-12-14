@@ -80,6 +80,7 @@ public class Firefighter {
 	int numteams;
 	Integer leader;
 	Integer oldleader;
+	private boolean decentralizedCooperation = false;
 
 	/**
 	 * Custom constructor
@@ -140,6 +141,9 @@ public class Firefighter {
 	/** A step method of the firefighter */
 	@ScheduledMethod(shuffle = false) // Prevent call order shuffling
 	public void step() {
+		// if you want to try this method, uncomment it and comment the rest of the step
+		// function
+		// stepDecentralizedCooperation();
 
 		if (!Tools.isAtTick(stepSchedule.getNextTime())) {
 			return;
@@ -154,39 +158,38 @@ public class Firefighter {
 			bounty = bounty + knowledge.getNewBounty();
 			knowledge.setNewBounty(0);
 		}
-		
-		
+
 		switch (numleaders) {
 		case 0:
-			switch(numteams) {
-			case 1: //Decentralized cooperateon 
-				
+			switch (numteams) {
+			case 1: // Decentralized cooperateon
+
 				break;
-				
-			case 2: //Competing decentralized teams
-				
+
+			case 2: // Competing decentralized teams
+
 				break;
 			default:
 				break;
 			}
 			break;
 		case 1:
-			switch(numteams) {
-			case 1: //Centralized cooperation
-				
+			switch (numteams) {
+			case 1: // Centralized cooperation
+
 				break;
-				
-			case 2:  //Semi-centralized cooperating teams
-				
+
+			case 2: // Semi-centralized cooperating teams
+
 				break;
 			default:
 				break;
 			}
-			break;			
+			break;
 		case 2:
-			switch(numteams) {
+			switch (numteams) {
 			case 2:// Competing centralized teams
-				
+
 				break;
 			default:
 				break;
@@ -298,7 +301,86 @@ public class Firefighter {
 		newknowledge = new Knowledge(this.context);
 		// Update sighterFirefightersLastStep
 		sightedFirefightersLastStep = sightedFirefighters;
+		System.out.println("Extinguished: "
+				+ ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
+	}
 
+	private void stepDecentralizedCooperation() {
+		this.decentralizedCooperation = true;
+		if (!Tools.isAtTick(stepSchedule.getNextTime())) {
+			return;
+		} // Execute only at the specified ticks
+		if (!context.contains(this)) {
+			return;
+		} // Safety
+		GridPoint myPos = grid.getLocation(this);
+
+		// Info acquisition part (takes no time)
+		checkEnvironment(sightRange);
+
+		// Action part (takes one step) :
+
+		///////////////////////////
+		// Move or check weather //
+		///////////////////////////
+
+		if (knowledge.getFire(myPos) > 0) {
+			runOutOfFire(); // If firefighter knows that he is standing in the fire
+		} else {
+			moveOrExtinguish();
+		}
+
+		/////////////////
+		// Communicate //
+		/////////////////
+		/*
+		 * if fire in sight and I'm not yet busy with a task: send global msg with
+		 * coordinate of fire and set fire as task // set currentTask in Knowledge class
+		 * 
+		 * else if new knowledge about a fire: evaluate if it is worth going to the fire
+		 * to help extinguishing it if Yes: set this fire as task
+		 * 
+		 */
+		if (knowledge.getCurrentTask() == null) {
+			if (knowledge.getReceivedTask() != null) {
+				// evaluate if I want to do this task:
+				boolean acceptTask = evaluateTask();
+
+				// if acceptTask then set it as current task
+				if (acceptTask)
+					knowledge.setCurrentTask(knowledge.getReceivedTask());
+
+				// either way set received task back to null, to indicate you have read it:
+				knowledge.setReceivedTask(null);
+			}
+			// new info (a new fire is spotted in sight range) and I have no task currently:
+			else if (newInfo && knowledge.getCurrentTask() == null && newknowledge.getAllFire().size() > 0) {
+				GridPoint fireGridPoint = newknowledge.getAllFire().get(0);
+
+				// send global msg with task to help extinguish the fire
+				Message msg = new Message();
+				msg.setContent("Z " + fireGridPoint.getX() + " " + fireGridPoint.getY());
+				System.out.println(msg.getContent());
+
+				// set the fire as my current task
+				knowledge.setCurrentTask(fireGridPoint);
+			}
+		} else {
+			// In case I already have a task, I am not going to accept another one
+			knowledge.setReceivedTask(null);
+		}
+
+		// Set newknowledge to zero
+		newknowledge = new Knowledge(this.context);
+
+		int ex = ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter();
+		if (ex != 0)
+			System.out.println("Extinguished: " + ex);
+	}
+
+	private boolean evaluateTask() {
+		// TODO: implement evaluation of tasks for decentralized coop
+		return true;
 	}
 
 	private boolean groupInRadioDist() {
@@ -709,7 +791,8 @@ public class Firefighter {
 		} else {
 			if (knowledge.getCurrentTask() != null && pos.equals(knowledge.getCurrentTask())) {
 				((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).incrementCounter();
-				// knowledge.setCurrentTask(null);
+				if (decentralizedCooperation)
+					knowledge.setCurrentTask(null);
 			}
 			knowledge.removeFire(pos);
 		}
@@ -923,6 +1006,12 @@ public class Firefighter {
 			String[] content = message.getContent().split(" ");
 			sendBounty(lastBountyOffer, knowledge.getAllFirefighters().get(Integer.parseInt(content[1])),
 					TransmissionMethod.Radio);
+		} else if (message.getContent().charAt(0) == 'Z') { // arbitrarily chosen letter, used for Decentralized Coop
+			// Unpack
+			String[] content = message.getContent().split(" ");
+			GridPoint position = new GridPoint(Integer.parseInt(content[1]), Integer.parseInt(content[2]));
+			// Set received task in knowledge
+			knowledge.setReceivedTask(position);
 		} else {
 			Knowledge receivedKnowledge = new Knowledge(this.context);
 			receivedKnowledge.convertFromString(message.getContent());

@@ -3,6 +3,7 @@ package fireFighters_MAS;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import globalcounter.FireKnowledgeUpdateCounter;
@@ -32,6 +33,8 @@ public class Knowledge {
 																// presence in the knowledge
 	private LinkedHashMap<Integer, GridPoint> givenTasks;
 
+	private GridPoint receivedTask;
+	
 	private LinkedHashMap<Integer, GridPoint> myGroup; // Locations and ID of the people in my group
 
 	private ArrayList<Integer> deadFirefighterKnowledge;
@@ -59,8 +62,18 @@ public class Knowledge {
 		this.windVelocity = null;
 		this.context = context;
 		this.newBounty = 0;
+		this.receivedTask = null;
 	}
-
+	
+	public GridPoint getReceivedTask(){
+		return this.receivedTask;
+	}
+	
+	public void setReceivedTask(GridPoint gp){
+		this.receivedTask = gp;
+	}
+	
+	
 	public int getGroupDirectionCounter() {
 		return this.GroupDirectionCounter;
 	}
@@ -621,9 +634,6 @@ public class Knowledge {
 	public void updateFromKnowledge(Knowledge k) {
 		for (GridPoint pos : k.getAllFire()) {
 			addFire(pos, k.getFire(pos));
-			// Increment successful knowledge update about fire:
-			// ((IGlobalCounter)
-			// context.getObjects(FireKnowledgeUpdateCounter.class).get(0)).incrementCounter();
 		}
 		for (GridPoint pos : k.getAllForest()) {
 			if (k.getForest(pos))
