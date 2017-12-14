@@ -150,10 +150,10 @@ public class Firefighter {
 			bounty = bounty + knowledge.getNewBounty();
 			knowledge.setNewBounty(0);
 		}
-		
+
 		if (!myFirstStep) {
 			assignRole();
-			System.out.println("Firefighter " + id + " is "+role.toString()+" has " + bounty + " Bounty.");
+			System.out.println("Firefighter " + id + " is " + role.toString() + " has " + bounty + " Bounty.");
 		}
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
@@ -170,14 +170,16 @@ public class Firefighter {
 		}
 
 		// Action part (takes one step)
-		
-		//No follower checks weather
-		//Leader checks weather if he is safe from fire
+
+		// No follower checks weather
+		// Leader checks weather if he is safe from fire
 		boolean checkWeather = false;
 		if (role == Role.Leader) {
 			double[] firedirection = findDirection2NearestFire();
-			if (firedirection[1]<sightRange) tryToMove(firedirection[0]+180); 
-			else checkWeather = true;
+			if (firedirection[1] < sightRange)
+				tryToMove(firedirection[0] + 180);
+			else
+				checkWeather = true;
 		}
 		if (knowledge.getFire(myPos) > 0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
@@ -185,8 +187,9 @@ public class Firefighter {
 			Velocity oldWindVelocity = knowledge.getWindVelocity();
 			checkWeather();
 			Velocity windVelocity = knowledge.getWindVelocity();
-			if (oldWindVelocity == null || oldWindVelocity.direction != windVelocity.direction
-					|| oldWindVelocity.speed != windVelocity.speed) {
+			if (oldWindVelocity == null
+					|| ((int) oldWindVelocity.direction * 100) != ((int) windVelocity.direction * 100)
+					|| (int) oldWindVelocity.speed != (int) windVelocity.speed) {
 				windUpdate = true;
 			}
 		} else {
@@ -205,23 +208,25 @@ public class Firefighter {
 			if (role == Role.Follower) {
 				ArrayList<GridPoint> leaderloc = new ArrayList<GridPoint>(
 						Arrays.asList(knowledge.getFirefighter(leader)));
-				//Choose between Radio and Satellite
+				// Choose between Radio and Satellite
 				TransmissionMethod leaderMethod = TransmissionMethod.Satellite;
-				if (Tools.getDistance(myPos, knowledge.getFirefighter(leader))<=this.radioDist) leaderMethod = TransmissionMethod.Radio;
+				if (Tools.getDistance(myPos, knowledge.getFirefighter(leader)) <= this.radioDist)
+					leaderMethod = TransmissionMethod.Radio;
 				// Send leader what I can see if I see new things
 				if (newInfo)
 					sendMessage(leaderMethod, leaderloc, MessageType.ISEENEW);
-					newInfo= false;
+				newInfo = false;
 				stepsSinceLastUpdate++;
-				if (moved&&stepsSinceLastUpdate>5)
+				if (moved && stepsSinceLastUpdate > 5)
 					sendMessage(leaderMethod, leaderloc, MessageType.POSITION);
-				stepsSinceLastUpdate=0;
-				
+				stepsSinceLastUpdate = 0;
+
 			} else if (role == Role.Leader) {
-				//Give followers your position in case you ran away from fire
-				if (moved) sendMessage(TransmissionMethod.Satellite,new ArrayList<GridPoint>(), MessageType.POSITION);
-				//Get location of followers
-				HashMap<Integer,GridPoint> followers = knowledge.getAllFirefighters();
+				// Give followers your position in case you ran away from fire
+				if (moved)
+					sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.POSITION);
+				// Get location of followers
+				HashMap<Integer, GridPoint> followers = knowledge.getAllFirefighters();
 				followers.remove(id);
 				// Send each follower specific task
 				for (int followerID : followers.keySet()) {
@@ -229,16 +234,17 @@ public class Firefighter {
 					ArrayList<GridPoint> destinationList = new ArrayList<GridPoint>(Arrays.asList(destination));
 					TaskToGive = evaluate(followerID);
 					if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
-						if (TaskToGive.getGridPoint()!=null)
-								sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
+						if (TaskToGive.getGridPoint() != null)
+							sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
 						knowledge.addTask(TaskToGive.getReceiverID(), TaskToGive.getGridPoint());
 						tasksSent++;
 					}
 				}
 				// Send wind update
 				if (windUpdate && !knowledge.getAllFire().isEmpty()) {
-					//Send Global Message to everyone
+					// Send Global Message to everyone
 					sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.WIND);
+					windUpdate = false;
 				}
 			}
 		}
@@ -372,9 +378,6 @@ public class Firefighter {
 	 */
 	private boolean tryToMove(double pDir) {
 		GridPoint myPos = grid.getLocation(this);
-		// Don't move in case of group forming
-		if (myFirstStep || mySecondStep)
-			return false;
 		for (int i = 0; i < 8; i++) {
 			GridPoint newPos = Tools.dirToCoord(pDir + (i % 2 == 0 ? -i * 45 : i * 45), myPos);
 
@@ -640,6 +643,8 @@ public class Firefighter {
 	 *            - position to check
 	 */
 	public void checkCell(GridPoint pos) {
+		if (!Tools.isWithinBorders(pos, grid))
+			return;
 		boolean hasFirefighter = (Tools.getObjectOfTypeAt(grid, Firefighter.class, pos) != null);
 		boolean hasFire = (Tools.getObjectOfTypeAt(grid, Fire.class, pos) != null);
 		boolean hasForest = (Tools.getObjectOfTypeAt(grid, Forest.class, pos) != null);
@@ -722,7 +727,8 @@ public class Firefighter {
 			message.setContent("DF " + id);
 			break;
 		case TASK:
-			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY() + " "+TaskToGive.getReceiverID() + " "+TaskToGive.getSenderID());
+			message.setContent("T " + TaskToGive.getX() + " " + TaskToGive.getY() + " " + TaskToGive.getReceiverID()
+					+ " " + TaskToGive.getSenderID());
 			break;
 		case WIND:
 			if (knowledge.getWindVelocity() == null) {
@@ -742,8 +748,8 @@ public class Firefighter {
 		}
 		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
 				.getObjects(IndividualMessageCounter.class).get(0));
-		
-		System.out.println("Message -"+message.getContent()+" -from "+id);
+
+		System.out.println("Message -" + message.getContent() + " -from " + id);
 		if (transmissionMethod == TransmissionMethod.Radio)
 			sendLocalMessage(recipientLocations, message);
 		else
@@ -853,7 +859,7 @@ public class Firefighter {
 			String[] content = message.getContent().split(" ");
 			GridPoint position = new GridPoint(Integer.parseInt(content[1]), Integer.parseInt(content[2]));
 			Integer id = Integer.parseInt(content[3]);
-			//int reward = Integer.parseInt(content[3]);
+			// int reward = Integer.parseInt(content[3]);
 			int sender = Integer.parseInt(content[4]);
 			boolean accepted = true;
 			// TODO decide when to accept
@@ -866,7 +872,7 @@ public class Firefighter {
 				receiver.add(knowledge.getAllFirefighters().get(sender));
 				Message m = new Message();
 				m.setContent("A " + this.id);
-				//sendLocalMessage(receiver, m);
+				// sendLocalMessage(receiver, m);
 			}
 		} else if (message.getContent().charAt(0) == 'A') {
 			String[] content = message.getContent().split(" ");
@@ -988,13 +994,13 @@ public class Firefighter {
 		 * 
 		 * } } }
 		 */
-		Task TaskToGive = new Task(highscore,lastBountyOffer,this.id,id);
+		Task TaskToGive = new Task(highscore, lastBountyOffer, this.id, id);
 		if (maxvalue > 5) {
 			// System.out.println(bounty);
 
 			if (bounty > 140) {
 				lastBountyOffer = (int) (bounty * 0.08 / peopleInMyGroup);
-				//sendTask(TaskToGive);
+				// sendTask(TaskToGive);
 			}
 
 		}
