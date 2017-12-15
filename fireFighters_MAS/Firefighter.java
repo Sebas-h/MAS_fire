@@ -39,6 +39,7 @@ public class Firefighter {
 	// Local variables definition
 	private Context<Object> context; // Context in which the firefighter is placed
 	private Grid<Object> grid; // Grid in which the firefighter is projected
+	private GridPoint myPos;
 	private int lifePoints; // Amount of damage the firefighter can still take from the fire, before
 							// extinction
 	private int strength; // Amount of damage the firefighter can deal to the fire
@@ -65,9 +66,9 @@ public class Firefighter {
 	int numberOfGroups;
 	int myGroupNumber;
 	int peopleInMyGroup;
-	GridPoint groupLocation;
-	boolean atGroupLocation;
-	boolean foundGroup;
+	// GridPoint groupLocation;
+	// boolean atGroupLocation;
+	// boolean foundGroup;
 	int radioDist;
 	Task TaskToGive;
 	boolean windUpdate = false;
@@ -81,6 +82,8 @@ public class Firefighter {
 	Integer leader;
 	Integer oldleader;
 	private boolean decentralizedCooperation = false;
+	private boolean centralizedCooperation = false;
+	public int groupNumber;
 
 	/**
 	 * Custom constructor
@@ -109,9 +112,9 @@ public class Firefighter {
 		numberOfGroups = 7;
 		myGroupNumber = -1;
 		peopleInMyGroup = 0;
-		atGroupLocation = false;
-		foundGroup = false;
-		myGroupNumber = id % numberOfGroups;
+		// atGroupLocation = false;
+		// foundGroup = false;
+		// myGroupNumber = id % numberOfGroups;
 		iWasLeader = false;
 		oldleader = id;
 		leader = id;
@@ -123,6 +126,8 @@ public class Firefighter {
 		bounty = params.getInteger("firefighter_initial_bounty");
 		numleaders = params.getInteger("firefighter_num_leaders");
 		numteams = params.getInteger("firefighter_num_teams");
+		if (numteams == 1) groupNumber = 0;
+		else groupNumber = (this.id % numteams);
 		double initialSpeed = params.getDouble("firefighter_initial_speed");
 		double initialSpeedDeviation = params.getDouble("firefighter_initial_speed_deviation");
 		velocity = new Velocity(RandomHelper.nextDoubleFromTo(initialSpeed - initialSpeedDeviation,
@@ -151,7 +156,7 @@ public class Firefighter {
 		if (!context.contains(this)) {
 			return;
 		} // Safety
-		GridPoint myPos = grid.getLocation(this);
+		myPos = grid.getLocation(this);
 
 		// See if you received new bounty
 		if (knowledge.getNewBounty() > 0) {
@@ -163,11 +168,10 @@ public class Firefighter {
 		case 0:
 			switch (numteams) {
 			case 1: // Decentralized cooperateon
-
+				stepDecentralizedCooperation();
 				break;
-
 			case 2: // Competing decentralized teams
-
+				stepDecentralizedCooperation();
 				break;
 			default:
 				break;
@@ -176,11 +180,14 @@ public class Firefighter {
 		case 1:
 			switch (numteams) {
 			case 1: // Centralized cooperation
-
+				stepCentralizedCooperation();
 				break;
 
 			case 2: // Semi-centralized cooperating teams
-
+				if (groupNumber == 1)
+					stepCentralizedCooperation();
+				else
+					stepDecentralizedCooperation();
 				break;
 			default:
 				break;
@@ -189,7 +196,7 @@ public class Firefighter {
 		case 2:
 			switch (numteams) {
 			case 2:// Competing centralized teams
-
+				stepCentralizedCooperation();
 				break;
 			default:
 				break;
@@ -199,6 +206,14 @@ public class Firefighter {
 			break;
 		}
 
+		System.out.println("Extinguished: "
+				+ ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
+	}
+
+	private void stepCentralizedCooperation() {
+		this.centralizedCooperation = true;
+
+		// Declare role in the beginning
 		if (!myFirstStep) {
 			assignRole();
 			System.out.println("Firefighter " + id + " is " + role.toString() + " has " + bounty + " Bounty.");
@@ -301,8 +316,7 @@ public class Firefighter {
 		newknowledge = new Knowledge(this.context);
 		// Update sighterFirefightersLastStep
 		sightedFirefightersLastStep = sightedFirefighters;
-		System.out.println("Extinguished: "
-				+ ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
+
 	}
 
 	private void stepDecentralizedCooperation() {
@@ -418,7 +432,7 @@ public class Firefighter {
 		double distanceToTask = Tools.getDistance(myPos, taskDestination);
 
 		if (distanceToTask <= sightRange) {
-			if (knowledge.getFire(taskDestination) == 0 && foundGroup) {
+			if (knowledge.getFire(taskDestination) == 0) { // && foundGroup) {
 				// no more fire.
 				knowledge.setCurrentTask(null);
 				return false;
@@ -590,65 +604,72 @@ public class Firefighter {
 	 * 
 	 * @return Group location as gridpoint
 	 */
-	public GridPoint findGroupLocation() {
-		double avgXCoord = 0;
-		double avgYCoord = 0;
-		int numberGroupMembers = 0;
-		for (int ID : knowledge.getAllFirefighters().keySet()) {
-			if (ID % numberOfGroups == myGroupNumber) {
-				GridPoint groupMemberPos = knowledge.getAllFirefighters().get(ID);
-				avgXCoord += groupMemberPos.getX();
-				avgYCoord += groupMemberPos.getY();
-				numberGroupMembers++;
-			}
-		}
-		avgXCoord = avgXCoord / numberGroupMembers;
-		avgYCoord = avgYCoord / numberGroupMembers;
-		groupLocation = new GridPoint((int) avgXCoord, (int) avgYCoord);
+	// public GridPoint findGroupLocation() {
+	// double avgXCoord = 0;
+	// double avgYCoord = 0;
+	// int numberGroupMembers = 0;
+	// for (int ID : knowledge.getAllFirefighters().keySet()) {
+	// if (ID % numberOfGroups == myGroupNumber) {
+	// GridPoint groupMemberPos = knowledge.getAllFirefighters().get(ID);
+	// avgXCoord += groupMemberPos.getX();
+	// avgYCoord += groupMemberPos.getY();
+	// numberGroupMembers++;
+	// }
+	// }
+	// avgXCoord = avgXCoord / numberGroupMembers;
+	// avgYCoord = avgYCoord / numberGroupMembers;
+	// groupLocation = new GridPoint((int) avgXCoord, (int) avgYCoord);
+	//
+	// peopleInMyGroup = numberGroupMembers;
+	// return groupLocation;
+	//
+	// }
 
-		peopleInMyGroup = numberGroupMembers;
-		return groupLocation;
-
-	}
-
-	private void formGroup() {
-		GridPoint analysePos = new GridPoint();
-		boolean hasFirefighter = false;
-
-		// Check the grid points surrounding the group location
-		for (int i = -sightRange; i <= sightRange; i++) {
-			for (int j = -sightRange; j <= sightRange; j++) {
-				// don't check the group location
-				if (i != 0 || j != 0) {
-					analysePos = new GridPoint(groupLocation.getX() + i, groupLocation.getY() + j);
-					hasFirefighter = (Tools.getObjectOfTypeAt(grid, Firefighter.class, analysePos) != null);
-					// If there is a firefighter and its not me and I don't already have him in my
-					// group send him a message and/or add him to the group
-					if (hasFirefighter && !analysePos.equals(grid.getLocation(this)) && (knowledge.getMyGroup() == null
-							|| !knowledge.getMyGroup().values().contains(analysePos))) {
-
-						HashMap<Integer, GridPoint> friends = knowledge.getAllFirefighters();
-						// Check my knowledge if there is a firefighter with the same location
-						for (int ID : friends.keySet()) {
-							// Check if I know a firefighter on this location that belongs to my group
-							if (myGroupNumber == (ID % numberOfGroups) && friends.get(ID).equals(analysePos)) {
-								// add him to my group
-								// System.out.println("Group "+myGroupNumber+" Firefighter "+id+" added
-								// firefighter "+ID+" to his group"+" GroupLocation"+groupLocation+" my location
-								// "+ grid.getLocation(this));
-								knowledge.addToMyGroup(analysePos, ID);
-							}
-						}
-						// Since this guy was not in my group yet, send a message
-						sendMessage(TransmissionMethod.Radio, new ArrayList<GridPoint>(Arrays.asList(analysePos)),
-								MessageType.POSITION);
-					}
-
-				}
-
-			}
-		}
-	}
+	// private void formGroup() {
+	// GridPoint analysePos = new GridPoint();
+	// boolean hasFirefighter = false;
+	//
+	// // Check the grid points surrounding the group location
+	// for (int i = -sightRange; i <= sightRange; i++) {
+	// for (int j = -sightRange; j <= sightRange; j++) {
+	// // don't check the group location
+	// if (i != 0 || j != 0) {
+	// analysePos = new GridPoint(groupLocation.getX() + i, groupLocation.getY() +
+	// j);
+	// hasFirefighter = (Tools.getObjectOfTypeAt(grid, Firefighter.class,
+	// analysePos) != null);
+	// // If there is a firefighter and its not me and I don't already have him in
+	// my
+	// // group send him a message and/or add him to the group
+	// if (hasFirefighter && !analysePos.equals(grid.getLocation(this)) &&
+	// (knowledge.getMyGroup() == null
+	// || !knowledge.getMyGroup().values().contains(analysePos))) {
+	//
+	// HashMap<Integer, GridPoint> friends = knowledge.getAllFirefighters();
+	// // Check my knowledge if there is a firefighter with the same location
+	// for (int ID : friends.keySet()) {
+	// // Check if I know a firefighter on this location that belongs to my group
+	// if (myGroupNumber == (ID % numberOfGroups) &&
+	// friends.get(ID).equals(analysePos)) {
+	// // add him to my group
+	// // System.out.println("Group "+myGroupNumber+" Firefighter "+id+" added
+	// // firefighter "+ID+" to his group"+" GroupLocation"+groupLocation+" my
+	// location
+	// // "+ grid.getLocation(this));
+	// knowledge.addToMyGroup(analysePos, ID);
+	// }
+	// }
+	// // Since this guy was not in my group yet, send a message
+	// sendMessage(TransmissionMethod.Radio, new
+	// ArrayList<GridPoint>(Arrays.asList(analysePos)),
+	// MessageType.POSITION);
+	// }
+	//
+	// }
+	//
+	// }
+	// }
+	// }
 
 	/**
 	 * Check if a firefighter is surrounded by fire Note: this method assumes that
@@ -780,7 +801,7 @@ public class Firefighter {
 
 		if (task != null && task.equals(pos) && Tools.getDistance(task, grid.getLocation(this)) == 1) {
 			knowledge.setCurrentTask(null);
-			atGroupLocation = true;
+			// atGroupLocation = true;
 		}
 		if (hasFire) {
 			if (knowledge.addFire(pos)) {
@@ -904,7 +925,8 @@ public class Firefighter {
 		for (GridPoint recipientLocation : recipientLocations) {
 
 			Firefighter recipient = (Firefighter) Tools.getObjectOfTypeAt(grid, Firefighter.class, recipientLocation);
-			if (recipient != null) // First of all, if the recipient is there at all
+			if (recipient != null && recipient.groupNumber == this.groupNumber) // First of all, if the recipient is
+																				// there at all
 			{
 				if (Tools.getDistance(myPos, recipientLocation) <= radioRange) // If using the radio, and the
 																				// recipient is within range
@@ -966,7 +988,8 @@ public class Firefighter {
 		((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 		((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0)).addMessage(message.getContent());
 		for (Firefighter recipient : allFirefighters) {
-			if (recipient != null) // First of all check if the recipient is there at all
+			if (recipient != null && recipient.groupNumber == this.groupNumber) // First of all check if the recipient
+																				// is there at all
 			{
 				recipient.receiveMessage(message); // Deliver message
 			}
