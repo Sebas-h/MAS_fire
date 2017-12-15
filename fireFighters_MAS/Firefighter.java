@@ -126,8 +126,10 @@ public class Firefighter {
 		bounty = params.getInteger("firefighter_initial_bounty");
 		numleaders = params.getInteger("firefighter_num_leaders");
 		numteams = params.getInteger("firefighter_num_teams");
-		if (numteams == 1) groupNumber = 0;
-		else groupNumber = (this.id % numteams);
+		if (numteams == 1)
+			groupNumber = 0;
+		else
+			groupNumber = (this.id % numteams);
 		double initialSpeed = params.getDouble("firefighter_initial_speed");
 		double initialSpeedDeviation = params.getDouble("firefighter_initial_speed_deviation");
 		velocity = new Velocity(RandomHelper.nextDoubleFromTo(initialSpeed - initialSpeedDeviation,
@@ -1009,7 +1011,7 @@ public class Firefighter {
 			// reward + " " + this.id);
 			String[] content = message.getContent().split(" ");
 			GridPoint position = new GridPoint(Integer.parseInt(content[1]), Integer.parseInt(content[2]));
-			Integer id = Integer.parseInt(content[3]);
+			Integer receiverID = Integer.parseInt(content[3]);
 			// int reward = Integer.parseInt(content[3]);
 			int sender = Integer.parseInt(content[4]);
 			boolean accepted = true;
@@ -1017,7 +1019,8 @@ public class Firefighter {
 			// if (knowledge.getCurrentTask() != null) {
 			// accepted = false;
 			// }
-			if (accepted) {
+			// Only accept task if yu want to and you are the receiver
+			if (accepted && this.id == receiverID) {
 				knowledge.setCurrentTask(position);
 				ArrayList<GridPoint> receiver = new ArrayList<>();
 				receiver.add(knowledge.getAllFirefighters().get(sender));
