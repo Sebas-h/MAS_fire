@@ -1174,6 +1174,14 @@ public class Firefighter {
 		 */
 
 		for (GridPoint p : knowledge.getAllFire()) {
+			int count = 0;
+			for (int otherid : knowledge.getAllFirefighters().keySet()) {
+			GridPoint s = knowledge.getTask(otherid);
+			if (s == p)
+				count = count +1;
+			}
+			if (count > 2)
+				continue;
 			int tempvalue = 0;
 			int dist = Tools.getDistance(Pos, p);
 			int fire = knowledge.getFire(p);
@@ -1181,7 +1189,7 @@ public class Firefighter {
 				continue;
 			// Check if surrounded by fire is not necessary because in this case there is
 			// allways a fire that is nearer
-			tempvalue = tempvalue - dist - fire + 17;
+			tempvalue = tempvalue - dist - fire + 10;
 			// Wind should only have influence if two fires got the same value
 			if (tempvalue > 0) {
 				if (tempvalue > maxvalue) {
