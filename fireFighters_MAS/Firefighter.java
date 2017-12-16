@@ -49,6 +49,7 @@ public class Firefighter {
 	private int tasksSent;
 	private int bountySpent;
 	private int bountyToBeSent;
+	private GridPoint bountyReceiver;
 	private int bountyTransferred;
 	private int lastBountyOffer;
 	// Local variables initialization
@@ -110,7 +111,7 @@ public class Firefighter {
 		bountyToBeSent = 0;
 		bountyTransferred = 0;
 		myFirstStep = true;
-		// mySecondStep = false;
+		mySecondStep = false;
 		// numberOfGroups = 7;
 		// myGroupNumber = -1;
 		// peopleInMyGroup = 0;
@@ -224,8 +225,6 @@ public class Firefighter {
 		// Declare role in the beginning
 		if (!myFirstStep) {
 			assignRole();
-			// System.out.println("Firefighter " + id + " is " + role.toString() + " has " +
-			// bounty + " Bounty.");
 		}
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
@@ -270,11 +269,17 @@ public class Firefighter {
 			myPos = grid.getLocation(this);
 			knowledge.addFirefighter(myPos, id);
 		}
-
+		// send leader 300 bounty in the beginning
+		if (mySecondStep) {
+			sendBounty(300, knowledge.getFirefighter(leader), getTransmissionMethode(knowledge.getFirefighter(leader)));
+			mySecondStep = false;
+		}
+		// Send each other messages to find leader
 		if (myFirstStep) {
 			// Send everybody your location and ID in case it is the first step
 			sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.POSITION);
 			myFirstStep = false;
+			mySecondStep = true;
 		} else {
 			// Communicating to Follower and Leader
 			if (role == Role.Follower) {
@@ -512,9 +517,6 @@ public class Firefighter {
 			// He walks in the main direction with higher probability (0.7 in this case)
 			setMainDirection(15);
 			velocity.direction = getRandomDirection(0.7, 20);
-			if (id == 10) {
-				System.out.println("Chosen Direction " + velocity.direction);
-			}
 			// velocity.direction = RandomHelper.nextDoubleFromTo(0, 360);
 			tryToMove(velocity.direction);
 		}
@@ -543,17 +545,17 @@ public class Firefighter {
 	 * @return double direction to go to
 	 */
 	private double getRandomDirection(double prob, double angle) {
-		 double directionToGo = 0;
-		 if (RandomHelper.nextDoubleFromTo(0, 1) < prob)
-		 directionToGo = RandomHelper.nextDoubleFromTo(this.mainDirection - (angle/2),
-		 this.mainDirection + (angle/2));
-		 else {
-		 if (RandomHelper.nextDoubleFromTo(0, 1) < 0.5)
-		 directionToGo = RandomHelper.nextDoubleFromTo(0, this.mainDirection - 45);
-		 else
-		 directionToGo = RandomHelper.nextDoubleFromTo(this.mainDirection + 45, 360);
-		 }
-		 return directionToGo;
+		double directionToGo = 0;
+		if (RandomHelper.nextDoubleFromTo(0, 1) < prob)
+			directionToGo = RandomHelper.nextDoubleFromTo(this.mainDirection - (angle / 2),
+					this.mainDirection + (angle / 2));
+		else {
+			if (RandomHelper.nextDoubleFromTo(0, 1) < 0.5)
+				directionToGo = RandomHelper.nextDoubleFromTo(0, this.mainDirection - 45);
+			else
+				directionToGo = RandomHelper.nextDoubleFromTo(this.mainDirection + 45, 360);
+		}
+		return directionToGo;
 	}
 
 	public void runAwayFromFire() {
@@ -941,7 +943,7 @@ public class Firefighter {
 			}
 			break;
 		case BOUNTY:
-			message.setContent("B " + bountyToBeSent);
+			message.setContent("B " + bountyToBeSent + " " + bountyReceiver.getX() + " " + bountyReceiver.getY());
 			break;
 		case GROUPDIRECTION:
 			message.setContent("GD " + knowledge.getGroupDirection());
@@ -951,7 +953,7 @@ public class Firefighter {
 		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
 				.getObjects(IndividualMessageCounter.class).get(0));
 
-		//System.out.println("Message -" + message.getContent() + " -from " + id);
+		// System.out.println("Message -" + message.getContent() + " -from " + id);
 		if (transmissionMethod == TransmissionMethod.Radio)
 			sendLocalMessage(recipientLocations, message);
 		else
@@ -1040,14 +1042,26 @@ public class Firefighter {
 		// Increment counters:
 		((IGlobalCounter) context.getObjects(MessageSentCounter.class).get(0)).incrementCounter();
 		((AvgMessageLength) context.getObjects(AvgMessageLength.class).get(0)).addMessage(message.getContent());
-		for (Firefighter recipient : allFirefighters) {
-			if (recipient != null && recipient.groupNumber == this.groupNumber) // First of all check if the recipient
-																				// is there at all
-			{
-				recipient.receiveMessage(message); // Deliver message
+
+		// If bounty is send via global message, only send it to specific firefighter
+		// and not all!
+		if (message.getContent().charAt(0) == 'B') {
+			String[] content = message.getContent().split(" ");
+			GridPoint position = new GridPoint(Integer.parseInt(content[2]), Integer.parseInt(content[3]));
+			for (Firefighter recipient : allFirefighters) {
+				if (recipient.grid.getLocation(recipient).equals(position))
+					recipient.receiveMessage(message);
 			}
+
+		} else {
+			for (Firefighter recipient : allFirefighters) {
+				if (recipient != null && recipient.groupNumber == this.groupNumber)
+				{
+					recipient.receiveMessage(message); // Deliver message
+				}
+			}
+			newInfo = false; // All the new information was sent, over now
 		}
-		newInfo = false; // All the new information was sent, over now
 	}
 
 	/**
@@ -1321,6 +1335,7 @@ public class Firefighter {
 	public boolean sendBounty(int sendbounty, GridPoint Firefighter, TransmissionMethod transmissionmethod) {
 		if (bounty - sendbounty <= 0)
 			return false;
+		this.bountyReceiver = Firefighter;
 		this.bountyToBeSent = sendbounty;
 		bounty = bounty - sendbounty;
 		bountyTransferred += sendbounty;
