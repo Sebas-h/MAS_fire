@@ -249,7 +249,7 @@ public class Firefighter {
 			double[] firedirection = findDirection2NearestFire();
 			if (firedirection[1] >= 0 && firedirection[1] < sightRange) {
 				tryToMove(firedirection[0] + 180);
-				System.out.println("away from fire");
+				// System.out.println("away from fire");
 			} else {
 				checkWeather = true;
 			}
@@ -302,7 +302,7 @@ public class Firefighter {
 				stepsSinceLastUpdate = 0;
 
 			} else if (role == Role.Leader) {
-				System.out.println(bounty);
+				// System.out.println(bounty);
 				// Give followers your position in case you ran away from fire
 				if (moved)
 					sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.POSITION);
@@ -832,12 +832,14 @@ public class Firefighter {
 
 		for (GridPoint p : knowledge.getAllFire()) // For all the fires in the firefighter's knowledge
 		{
-			int dist = Tools.getDistance(myPos, p);
-			// Determine if the fire is closest. If so, update distance and direction
-			// accordingly
-			if (dist < minDist) {
-				minDist = dist;
-				direction = Tools.getAngle(myPos, p);
+			if (knowledge.getFire(p) != 0) {
+				int dist = Tools.getDistance(myPos, p);
+				// Determine if the fire is closest. If so, update distance and direction
+				// accordingly
+				if (dist < minDist) {
+					minDist = dist;
+					direction = Tools.getAngle(myPos, p);
+				}
 			}
 		}
 
@@ -1094,7 +1096,7 @@ public class Firefighter {
 			}
 			// Only accept task if yu want to and you are the receiver
 			if (accepted && this.id == receiverID) {
-				System.out.println("receive&accepted");
+				// System.out.println("receive&accepted");
 				knowledge.setCurrentTask(position);
 				ArrayList<GridPoint> receiver = new ArrayList<>();
 				receiver.add(knowledge.getAllFirefighters().get(sender));
@@ -1176,9 +1178,9 @@ public class Firefighter {
 		for (GridPoint p : knowledge.getAllFire()) {
 			int count = 0;
 			for (int otherid : knowledge.getAllFirefighters().keySet()) {
-			GridPoint s = knowledge.getTask(otherid);
-			if (s == p)
-				count = count +1;
+				GridPoint s = knowledge.getTask(otherid);
+				if (s == p)
+					count = count + 1;
 			}
 			if (count > 2)
 				continue;
