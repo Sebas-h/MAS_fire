@@ -270,7 +270,7 @@ public class Firefighter {
 			knowledge.addFirefighter(myPos, id);
 		}
 		// send leader 300 bounty in the beginning
-		if (mySecondStep) {
+		if (role==Role.Follower && mySecondStep) {
 			sendBounty(300, knowledge.getFirefighter(leader), getTransmissionMethode(knowledge.getFirefighter(leader)));
 			mySecondStep = false;
 		}
@@ -312,6 +312,7 @@ public class Firefighter {
 					TaskToGive = evaluate(followerID);
 					if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
 						if (TaskToGive.getGridPoint() != null) {
+							System.out.println("tasktoGive loc: "+TaskToGive.getX()+" , "+TaskToGive.getY());
 							sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
 							knowledge.addTask(TaskToGive.getReceiverID(), TaskToGive.getGridPoint());
 							tasksSent++;
@@ -510,9 +511,11 @@ public class Firefighter {
 
 		if (knowledge.getCurrentTask() != null) {
 			executeTask(knowledge.getCurrentTask());
-		} else if (distance > 1) { // If fire is more than extinguishingDistance away
-			tryToMove(directionToFire);
-		} else { // Otherwise explore randomly
+		//} else if (distance > 1) { // If fire is more than extinguishingDistance away
+		//	tryToMove(directionToFire);
+		} else if(distance==1){
+			extinguishFire(directionToFire);
+		}else { // Otherwise explore randomly
 			// Firefighter sets a new main direction every 15 steps
 			// He walks in the main direction with higher probability (0.7 in this case)
 			setMainDirection(15);
@@ -854,10 +857,11 @@ public class Firefighter {
 
 		GridPoint task = knowledge.getCurrentTask();
 
-		if (task != null && task.equals(pos) && Tools.getDistance(task, grid.getLocation(this)) == 1) {
-			knowledge.setCurrentTask(null);
+		//delete task if one step away?
+		//if (task != null && task.equals(pos) && Tools.getDistance(task, grid.getLocation(this)) == 1) {
+		//	knowledge.setCurrentTask(null);
 			// atGroupLocation = true;
-		}
+		//}
 		if (hasFire) {
 			if (knowledge.addFire(pos)) {
 				// If the fire is not yet in the knowledge, update leader about it
@@ -1081,11 +1085,12 @@ public class Firefighter {
 			int sender = Integer.parseInt(content[4]);
 			boolean accepted = true;
 			// TODO decide when to accept
-			// if (knowledge.getCurrentTask() != null) {
-			// accepted = false;
-			// }
+			if (knowledge.getCurrentTask() != null) {
+			accepted = false;
+			}
 			// Only accept task if yu want to and you are the receiver
 			if (accepted && this.id == receiverID) {
+				System.out.println("receive&accepted");
 				knowledge.setCurrentTask(position);
 				ArrayList<GridPoint> receiver = new ArrayList<>();
 				receiver.add(knowledge.getAllFirefighters().get(sender));
