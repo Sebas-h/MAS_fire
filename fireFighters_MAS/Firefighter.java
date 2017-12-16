@@ -212,6 +212,9 @@ public class Firefighter {
 				+ ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
 	}
 
+	/**
+	 * in this situation we have (at least) 1 leader
+	 */
 	private void stepCentralizedCooperation() {
 		this.centralizedCooperation = true;
 
@@ -299,10 +302,11 @@ public class Firefighter {
 					ArrayList<GridPoint> destinationList = new ArrayList<GridPoint>(Arrays.asList(destination));
 					TaskToGive = evaluate(followerID);
 					if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
-						if (TaskToGive.getGridPoint() != null)
+						if (TaskToGive.getGridPoint() != null) {
 							sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
-						knowledge.addTask(TaskToGive.getReceiverID(), TaskToGive.getGridPoint());
-						tasksSent++;
+							knowledge.addTask(TaskToGive.getReceiverID(), TaskToGive.getGridPoint());
+							tasksSent++;
+						}
 					}
 				}
 				// Send wind update
