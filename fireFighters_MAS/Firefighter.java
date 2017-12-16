@@ -221,7 +221,7 @@ public class Firefighter {
 	 */
 	private void stepCentralizedCooperation() {
 		this.centralizedCooperation = true;
-
+		moved = false;
 		// Declare role in the beginning
 		if (!myFirstStep) {
 			assignRole();
@@ -247,10 +247,12 @@ public class Firefighter {
 		boolean checkWeather = false;
 		if (role == Role.Leader) {
 			double[] firedirection = findDirection2NearestFire();
-			if (firedirection[1] < sightRange)
+			if (firedirection[1] >= 0 && firedirection[1] < sightRange) {
 				tryToMove(firedirection[0] + 180);
-			else
+				System.out.println("away from fire");
+			} else {
 				checkWeather = true;
+			}
 		}
 		if (knowledge.getFire(myPos) > 0) {
 			runOutOfFire(); // If firefighter knows that he is standing in the fire
@@ -269,9 +271,10 @@ public class Firefighter {
 			myPos = grid.getLocation(this);
 			knowledge.addFirefighter(myPos, id);
 		}
-		// send leader 300 bounty in the beginning
-		if (role==Role.Follower && mySecondStep) {
-			sendBounty(300, knowledge.getFirefighter(leader), getTransmissionMethode(knowledge.getFirefighter(leader)));
+		// send leader half of the bounty in the beginning
+		if (role == Role.Follower && mySecondStep) {
+			sendBounty(bounty / 2, knowledge.getFirefighter(leader),
+					getTransmissionMethode(knowledge.getFirefighter(leader)));
 			mySecondStep = false;
 		}
 		// Send each other messages to find leader
@@ -299,9 +302,11 @@ public class Firefighter {
 				stepsSinceLastUpdate = 0;
 
 			} else if (role == Role.Leader) {
+				System.out.println(bounty);
 				// Give followers your position in case you ran away from fire
 				if (moved)
 					sendMessage(TransmissionMethod.Satellite, new ArrayList<GridPoint>(), MessageType.POSITION);
+
 				// Get location of followers
 				HashMap<Integer, GridPoint> followers = knowledge.getAllFirefighters();
 				followers.remove(id);
@@ -312,7 +317,6 @@ public class Firefighter {
 					TaskToGive = evaluate(followerID);
 					if (knowledge.getTask(followerID) == null || !(knowledge.getTask(followerID).equals(TaskToGive))) {
 						if (TaskToGive.getGridPoint() != null) {
-							System.out.println("tasktoGive loc: "+TaskToGive.getX()+" , "+TaskToGive.getY());
 							sendMessage(getTransmissionMethode(destination), destinationList, MessageType.TASK);
 							knowledge.addTask(TaskToGive.getReceiverID(), TaskToGive.getGridPoint());
 							tasksSent++;
@@ -511,11 +515,11 @@ public class Firefighter {
 
 		if (knowledge.getCurrentTask() != null) {
 			executeTask(knowledge.getCurrentTask());
-		//} else if (distance > 1) { // If fire is more than extinguishingDistance away
-		//	tryToMove(directionToFire);
-		} else if(distance==1){
+			// } else if (distance > 1) { // If fire is more than extinguishingDistance away
+			// tryToMove(directionToFire);
+		} else if (distance == 1) {
 			extinguishFire(directionToFire);
-		}else { // Otherwise explore randomly
+		} else { // Otherwise explore randomly
 			// Firefighter sets a new main direction every 15 steps
 			// He walks in the main direction with higher probability (0.7 in this case)
 			setMainDirection(15);
@@ -857,11 +861,12 @@ public class Firefighter {
 
 		GridPoint task = knowledge.getCurrentTask();
 
-		//delete task if one step away?
-		//if (task != null && task.equals(pos) && Tools.getDistance(task, grid.getLocation(this)) == 1) {
-		//	knowledge.setCurrentTask(null);
-			// atGroupLocation = true;
-		//}
+		// delete task if one step away?
+		// if (task != null && task.equals(pos) && Tools.getDistance(task,
+		// grid.getLocation(this)) == 1) {
+		// knowledge.setCurrentTask(null);
+		// atGroupLocation = true;
+		// }
 		if (hasFire) {
 			if (knowledge.addFire(pos)) {
 				// If the fire is not yet in the knowledge, update leader about it
@@ -1059,8 +1064,7 @@ public class Firefighter {
 
 		} else {
 			for (Firefighter recipient : allFirefighters) {
-				if (recipient != null && recipient.groupNumber == this.groupNumber)
-				{
+				if (recipient != null && recipient.groupNumber == this.groupNumber) {
 					recipient.receiveMessage(message); // Deliver message
 				}
 			}
@@ -1086,7 +1090,7 @@ public class Firefighter {
 			boolean accepted = true;
 			// TODO decide when to accept
 			if (knowledge.getCurrentTask() != null) {
-			accepted = false;
+				accepted = false;
 			}
 			// Only accept task if yu want to and you are the receiver
 			if (accepted && this.id == receiverID) {
@@ -1177,7 +1181,7 @@ public class Firefighter {
 				continue;
 			// Check if surrounded by fire is not necessary because in this case there is
 			// allways a fire that is nearer
-			tempvalue = tempvalue - dist - fire + 10;
+			tempvalue = tempvalue - dist - fire + 17;
 			// Wind should only have influence if two fires got the same value
 			if (tempvalue > 0) {
 				if (tempvalue > maxvalue) {
