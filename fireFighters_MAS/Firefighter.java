@@ -63,9 +63,9 @@ public class Firefighter {
 	Role role; // The character of the firefighter defining its behavior //TODO This should be
 				// implemented
 	boolean iWasLeader;
-	int numberOfGroups;
-	int myGroupNumber;
-	int peopleInMyGroup;
+	// int numberOfGroups;
+	// int myGroupNumber;
+	// int peopleInMyGroup;
 	// GridPoint groupLocation;
 	// boolean atGroupLocation;
 	// boolean foundGroup;
@@ -84,6 +84,8 @@ public class Firefighter {
 	private boolean decentralizedCooperation = false;
 	private boolean centralizedCooperation = false;
 	public int groupNumber;
+	private int randomStepCount;
+	private double mainDirection;
 
 	/**
 	 * Custom constructor
@@ -108,10 +110,11 @@ public class Firefighter {
 		bountyToBeSent = 0;
 		bountyTransferred = 0;
 		myFirstStep = true;
-		mySecondStep = false;
-		numberOfGroups = 7;
-		myGroupNumber = -1;
-		peopleInMyGroup = 0;
+		// mySecondStep = false;
+		// numberOfGroups = 7;
+		// myGroupNumber = -1;
+		// peopleInMyGroup = 0;
+		randomStepCount = 0;
 		// atGroupLocation = false;
 		// foundGroup = false;
 		// myGroupNumber = id % numberOfGroups;
@@ -165,7 +168,6 @@ public class Firefighter {
 			bounty = bounty + knowledge.getNewBounty();
 			knowledge.setNewBounty(0);
 		}
-
 		switch (numleaders) {
 		case 0:
 			switch (numteams) {
@@ -208,8 +210,9 @@ public class Firefighter {
 			break;
 		}
 
-		System.out.println("Extinguished: "
-				+ ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
+		// System.out.println("Extinguished: "
+		// + ((IGlobalCounter)
+		// context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
 	}
 
 	/**
@@ -221,7 +224,8 @@ public class Firefighter {
 		// Declare role in the beginning
 		if (!myFirstStep) {
 			assignRole();
-			System.out.println("Firefighter " + id + " is " + role.toString() + " has " + bounty + " Bounty.");
+			// System.out.println("Firefighter " + id + " is " + role.toString() + " has " +
+			// bounty + " Bounty.");
 		}
 		// Info acquisition part (takes no time)
 		checkEnvironment(sightRange);
@@ -380,7 +384,7 @@ public class Firefighter {
 				// send global msg with task to help extinguish the fire
 				Message msg = new Message();
 				msg.setContent("Z " + fireGridPoint.getX() + " " + fireGridPoint.getY());
-				System.out.println(msg.getContent());
+				// System.out.println(msg.getContent());
 
 				// set the fire as my current task
 				knowledge.setCurrentTask(fireGridPoint);
@@ -394,8 +398,8 @@ public class Firefighter {
 		newknowledge = new Knowledge(this.context);
 
 		int ex = ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter();
-		if (ex != 0)
-			System.out.println("Extinguished: " + ex);
+		// if (ex != 0)
+		// System.out.println("Extinguished: " + ex);
 	}
 
 	private boolean evaluateTask() {
@@ -504,9 +508,52 @@ public class Firefighter {
 		} else if (distance > 1) { // If fire is more than extinguishingDistance away
 			tryToMove(directionToFire);
 		} else { // Otherwise explore randomly
-			velocity.direction = RandomHelper.nextDoubleFromTo(0, 360);
+			// Firefighter sets a new main direction every 15 steps
+			// He walks in the main direction with higher probability (0.7 in this case)
+			setMainDirection(15);
+			velocity.direction = getRandomDirection(0.7, 20);
+			if (id == 10) {
+				System.out.println("Chosen Direction " + velocity.direction);
+			}
+			// velocity.direction = RandomHelper.nextDoubleFromTo(0, 360);
 			tryToMove(velocity.direction);
 		}
+	}
+
+	/**
+	 * Resets main direction after 'threshold' steps
+	 * 
+	 * @param threshold
+	 */
+	private void setMainDirection(int threshold) {
+		if (randomStepCount >= threshold) {
+			randomStepCount = 0;
+			this.mainDirection = RandomHelper.nextDoubleFromTo(0, 360);
+		} else
+			randomStepCount++;
+	}
+
+	/**
+	 * Decides where to go based on main direction. With a certain it goes in a
+	 * certain degree window of the main direction
+	 * 
+	 * @param double
+	 *            prob: probability to go in the main direction double angle: size
+	 *            of the angle where to go
+	 * @return double direction to go to
+	 */
+	private double getRandomDirection(double prob, double angle) {
+		 double directionToGo = 0;
+		 if (RandomHelper.nextDoubleFromTo(0, 1) < prob)
+		 directionToGo = RandomHelper.nextDoubleFromTo(this.mainDirection - (angle/2),
+		 this.mainDirection + (angle/2));
+		 else {
+		 if (RandomHelper.nextDoubleFromTo(0, 1) < 0.5)
+		 directionToGo = RandomHelper.nextDoubleFromTo(0, this.mainDirection - 45);
+		 else
+		 directionToGo = RandomHelper.nextDoubleFromTo(this.mainDirection + 45, 360);
+		 }
+		 return directionToGo;
 	}
 
 	public void runAwayFromFire() {
@@ -904,7 +951,7 @@ public class Firefighter {
 		IndividualMessageCounter indMesCount = ((IndividualMessageCounter) context
 				.getObjects(IndividualMessageCounter.class).get(0));
 
-		System.out.println("Message -" + message.getContent() + " -from " + id);
+		//System.out.println("Message -" + message.getContent() + " -from " + id);
 		if (transmissionMethod == TransmissionMethod.Radio)
 			sendLocalMessage(recipientLocations, message);
 		else
@@ -1163,7 +1210,7 @@ public class Firefighter {
 			// System.out.println(bounty);
 
 			if (bounty > 140) {
-				lastBountyOffer = (int) (bounty * 0.08 / peopleInMyGroup);
+				lastBountyOffer = (int) (bounty * 0.08 / (knowledge.getAllFirefighters().size() / numteams));
 				// sendTask(TaskToGive);
 			}
 
