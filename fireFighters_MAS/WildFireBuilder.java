@@ -1,6 +1,7 @@
 package fireFighters_MAS;
 
-import globalcounter.ExtinguishedFireCounter;
+import globalcounter.ExtinguishedFireCounter1;
+import globalcounter.ExtinguishedFireCounter2;
 import globalcounter.FireKnowledgeUpdateCounter;
 import globalcounter.ForestKnowledgeUpdateCounter;
 import globalcounter.IGlobalCounter;
@@ -30,6 +31,7 @@ import repast.simphony.space.grid.Grid;
 import repast.simphony.space.grid.GridBuilderParameters;
 import repast.simphony.space.grid.GridPoint;
 import repast.simphony.space.grid.SimpleGridAdder;
+import repast.simphony.util.collections.IndexedIterable;
 
 /**
  * A class used to build the simulation environment
@@ -109,7 +111,8 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 
 		// Add global counters to context
 		context.add(new IndividualMessageCounter());
-		context.add(new ExtinguishedFireCounter());
+		context.add(new ExtinguishedFireCounter1());
+		context.add(new ExtinguishedFireCounter2());
 		context.add(new WeatherCheckCounter());
 		context.add(new FireKnowledgeUpdateCounter());
 		context.add(new ForestKnowledgeUpdateCounter());
@@ -193,18 +196,63 @@ public class WildFireBuilder implements ContextBuilder<Object> {
 	public int getTaskCompletitionPercent() {
 		double taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
 		int taskcompleted = ((IGlobalCounter) context.getObjects(TaskCompleteCounter.class).get(0)).getCounter();
-		return (int) Math.round((taskcompleted / taskaccepted)*100);
+		return (int) Math.round((taskcompleted / taskaccepted) * 100);
 	}
 
 	public int getTaskAcceptancePercent() {
 		double tasknum = ((IGlobalCounter) context.getObjects(TaskReceiveCounter.class).get(0)).getCounter();
 		int taskaccepted = ((IGlobalCounter) context.getObjects(TaskAcceptedCounter.class).get(0)).getCounter();
-		return (int) Math.round((taskaccepted / tasknum)*100);
+		return (int) Math.round((taskaccepted / tasknum) * 100);
 	}
-	
+
 	public int getTotalbountyEarned() {
 		Parameters params = RunEnvironment.getInstance().getParameters();
 		int bounty = params.getInteger("firefighter_fire_reward_bounty");
-		return bounty*((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter();
+		//return bounty * ((IGlobalCounter) context.getObjects(ExtinguishedFireCounter1.class).get(0)).getCounter();
+		return -1;
+	}
+
+	public int getFFT1() {
+		int counter = 0;
+		IndexedIterable<Object> tmp = context.getObjects(Firefighter.class);
+		for (int i = 0; i < tmp.size(); i++) {
+			if (((Firefighter) tmp.get(i)).groupNumber == 0) {
+				counter++;
+			}
+		}
+		return counter;
+	}
+
+	public int getFFT2() {
+		int counter = 0;
+		IndexedIterable<Object> tmp = context.getObjects(Firefighter.class);
+		for (int i = 0; i < tmp.size(); i++) {
+			if (((Firefighter) tmp.get(i)).groupNumber == 1) {
+				counter++;
+			}
+		}
+		return counter;
+	}
+
+	public int getBountyTeam1() {
+		int bounty = 0;
+		IndexedIterable<Object> tmp = context.getObjects(Firefighter.class);
+		for (int i = 0; i < tmp.size(); i++) {
+			if (((Firefighter) tmp.get(i)).groupNumber == 0) {
+				bounty += ((Firefighter) tmp.get(i)).getBounty();
+			}
+		}
+		return bounty;
+	}
+
+	public int getBountyTeam2() {
+		int bounty = 0;
+		IndexedIterable<Object> tmp = context.getObjects(Firefighter.class);
+		for (int i = 0; i < tmp.size(); i++) {
+			if (((Firefighter) tmp.get(i)).groupNumber == 1) {
+				bounty += ((Firefighter) tmp.get(i)).getBounty();
+			}
+		}
+		return bounty;
 	}
 }

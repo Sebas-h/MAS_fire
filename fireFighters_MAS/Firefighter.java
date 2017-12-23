@@ -153,7 +153,7 @@ public class Firefighter {
 	@ScheduledMethod(shuffle = false) // Prevent call order shuffling
 	public void step() {
 		// if you want to try decentralized coop, uncomment line below
-		numleaders = 0;
+		//numleaders = 0;
 
 		if (!Tools.isAtTick(stepSchedule.getNextTime())) {
 			return;
@@ -213,7 +213,7 @@ public class Firefighter {
 
 		// System.out.println("Extinguished: "
 		// + ((IGlobalCounter)
-		// context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
+		// context.getObjects(ExtinguishedFireCounter1.class).get(0)).getCounter());
 	}
 
 	/**
@@ -389,7 +389,7 @@ public class Firefighter {
 //		ISchedule schedule = RunEnvironment.getInstance().getCurrentSchedule();
 //		if (schedule.getTickCount() == params.getInteger("end_tick")) {
 //			System.out.println("Extinguished: " + 
-//					((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).getCounter());
+//					((IGlobalCounter) context.getObjects(ExtinguishedFireCounter1.class).get(0)).getCounter());
 //		}
 	}
 
@@ -762,7 +762,11 @@ public class Firefighter {
 				bounty += params.getInteger("firefighter_fire_reward_bounty");
 
 				// Get fire extinguished counter and increment:
-				((IGlobalCounter) context.getObjects(ExtinguishedFireCounter.class).get(0)).incrementCounter();
+				if(groupNumber==0) {
+					((IGlobalCounter) context.getObjects(ExtinguishedFireCounter1.class).get(0)).incrementCounter();
+				}else {
+					((IGlobalCounter) context.getObjects(ExtinguishedFireCounter2.class).get(0)).incrementCounter();
+				}
 			}
 		}
 	}
